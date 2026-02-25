@@ -36,8 +36,8 @@
 
 .client-detail-card__header {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto;
   gap: 1rem 1.25rem;
   align-items: start;
   padding: 2rem 2rem 1.75rem;
@@ -138,10 +138,9 @@
 }
 
 .client-detail-card__header .btn {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  width: 100%;
-  justify-content: center;
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
 }
 
 /* Contact details grid */
@@ -367,6 +366,15 @@
 @media (max-width: 768px) {
   .client-detail-card__header {
     padding: 1.5rem 1.25rem;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .client-detail-card__header .btn {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: center;
   }
 
   .client-detail-card__body {

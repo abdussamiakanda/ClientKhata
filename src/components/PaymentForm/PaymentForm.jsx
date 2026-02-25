@@ -4,7 +4,7 @@ import { JOB_STATUSES, CURRENCIES } from '../../schema/paymentSchema';
 import { X } from 'lucide-react';
 import './PaymentForm.css';
 
-export function PaymentForm({ userId, clients, editingPayment, defaultClientId, onClose }) {
+export function PaymentForm({ userId, clients, editingPayment, defaultClientId, fixedClientId, onClose }) {
   const [clientId, setClientId] = useState('');
   const [workDescription, setWorkDescription] = useState('');
   const [notes, setNotes] = useState('');
@@ -16,15 +16,20 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
 
   const isEdit = Boolean(editingPayment?.id);
   const selectedClient = clients?.find((c) => c.id === clientId);
+  const isClientLocked = Boolean(fixedClientId && !isEdit);
 
   const clientsForDropdown = useMemo(() => {
     const list = (clients || []).filter((c) => c.active !== false);
+    if (isClientLocked && fixedClientId) {
+      const fixed = list.find((c) => c.id === fixedClientId);
+      return fixed ? [fixed] : list;
+    }
     if (isEdit && clientId && !list.some((c) => c.id === clientId)) {
       const current = clients?.find((c) => c.id === clientId);
       if (current) return [current, ...list];
     }
     return list;
-  }, [clients, isEdit, clientId]);
+  }, [clients, isEdit, clientId, isClientLocked, fixedClientId]);
 
   const hasClients = clientsForDropdown.length > 0;
 
@@ -37,19 +42,20 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
       setCurrency(CURRENCIES.some((c) => c.code === editingPayment.currency) ? editingPayment.currency : 'BDT');
       setStatus(JOB_STATUSES.includes(editingPayment.status) ? editingPayment.status : 'Pending');
     } else {
-      setClientId(defaultClientId || '');
+      setClientId(fixedClientId || defaultClientId || '');
       setWorkDescription('');
       setNotes('');
       setAmount('');
       setCurrency('BDT');
       setStatus('Pending');
     }
-  }, [editingPayment, defaultClientId]);
+  }, [editingPayment, defaultClientId, fixedClientId]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!clientId) {
+    const effectiveClientId = isClientLocked ? fixedClientId : clientId;
+    if (!effectiveClientId) {
       setError('Please select a client.');
       return;
     }
@@ -58,12 +64,13 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
       setError('Please enter a valid amount.');
       return;
     }
-    const clientName = selectedClient?.clientName ?? editingPayment?.clientName ?? '';
+    const clientForName = clients?.find((c) => c.id === effectiveClientId);
+    const clientName = clientForName?.clientName ?? selectedClient?.clientName ?? editingPayment?.clientName ?? '';
     setSaving(true);
     try {
       if (isEdit) {
         await updatePayment(editingPayment.id, {
-          clientId,
+          clientId: effectiveClientId,
           clientName,
           workDescription: workDescription.trim(),
           notes: notes.trim(),
@@ -73,7 +80,7 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
         });
       } else {
         await addPayment(userId, {
-          clientId,
+          clientId: effectiveClientId,
           clientName,
           workDescription: workDescription.trim(),
           notes: notes.trim(),
@@ -105,20 +112,26 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
           )}
           <label className="form-label">
             Client *
-            <select
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              className="form-input"
-              required
-              disabled={!hasClients && !isEdit}
-            >
-              <option value="">Select client…</option>
-              {clientsForDropdown.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.clientName}
-                </option>
-              ))}
-            </select>
+            {isClientLocked && selectedClient ? (
+              <div className="form-input form-input--readonly" aria-readonly>
+                {selectedClient.clientName}
+              </div>
+            ) : (
+              <select
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="form-input"
+                required
+                disabled={!hasClients && !isEdit}
+              >
+                <option value="">Select client…</option>
+                {clientsForDropdown.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.clientName}
+                  </option>
+                ))}
+              </select>
+            )}
           </label>
           <label className="form-label">
             Job description *

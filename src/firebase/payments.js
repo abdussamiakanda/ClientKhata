@@ -9,6 +9,7 @@ import {
   onSnapshot,
   serverTimestamp,
   deleteField,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { createPaymentData, JOB_STATUSES, STATUS_TIMESTAMP_KEYS } from '../schema/paymentSchema';
@@ -87,6 +88,25 @@ export async function updatePayment(paymentId, data) {
   delete payload.id;
   delete payload.timestamp;
   delete payload.userId;
+  await updateDoc(ref, payload);
+}
+
+/**
+ * Update only timestamp fields on a payment (e.g. from job detail page date edits).
+ * @param {string} paymentId
+ * @param {{ timestamp?: Date, ongoingAt?: Date, deliveredAt?: Date, paidAt?: Date }} updates - Date values for each field to update
+ */
+export async function updatePaymentTimestamps(paymentId, updates) {
+  const ref = doc(db, PAYMENTS_COLLECTION, paymentId);
+  const payload = {};
+  const keys = ['timestamp', 'ongoingAt', 'deliveredAt', 'paidAt'];
+  keys.forEach((key) => {
+    const value = updates[key];
+    if (value instanceof Date) {
+      payload[key] = Timestamp.fromDate(value);
+    }
+  });
+  if (Object.keys(payload).length === 0) return;
   await updateDoc(ref, payload);
 }
 

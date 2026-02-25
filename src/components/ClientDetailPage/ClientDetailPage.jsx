@@ -316,6 +316,7 @@ export function ClientDetailPage() {
           clients={clients}
           editingPayment={editingPayment}
           defaultClientId={client?.id}
+          fixedClientId={editingPayment ? undefined : client?.id}
           onClose={handleClosePaymentForm}
         />
       )}

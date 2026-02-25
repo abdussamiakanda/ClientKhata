@@ -5,8 +5,8 @@ service cloud.firestore {
     function isAllowedUser() {
       return request.auth != null
         && request.auth.token.email in [
-          'you@example.com',
-          'teammate@example.com'
+          'abdussamiakanda@gmail.com',
+          'abdulbasirakanda@gmail.com'
         ];
     }
     match /clients/{clientId} {

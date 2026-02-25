@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { subscribePayments, deletePayment } from '../../firebase/payments';
+import { subscribePayments, deletePayment, updatePaymentTimestamps } from '../../firebase/payments';
 import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
 import { PaymentForm } from '../PaymentForm';
 import { ConfirmModal } from '../ConfirmModal';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
-import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText } from 'lucide-react';
+import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText, CalendarPlus, PlayCircle, PackageCheck, CheckCircle } from 'lucide-react';
 import './JobDetailPage.css';
 
 const STATUS_LABELS = {
@@ -23,6 +23,33 @@ const STATUS_DATE_KEYS = {
   Ongoing: 'ongoingAt',
   Delivered: 'deliveredAt',
   Paid: 'paidAt',
+};
+
+/** Step key to Firestore field for date edits (created uses 'timestamp') */
+const STEP_TO_FIELD = {
+  created: 'timestamp',
+  Ongoing: 'ongoingAt',
+  Delivered: 'deliveredAt',
+  Paid: 'paidAt',
+};
+
+function stepTsToDate(ts) {
+  if (!ts) return null;
+  if (typeof ts.toDate === 'function') return ts.toDate();
+  if (ts instanceof Date) return ts;
+  return null;
+}
+
+function dateToDatetimeLocal(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const STEP_ICONS = {
+  created: CalendarPlus,
+  Ongoing: PlayCircle,
+  Delivered: PackageCheck,
+  Paid: CheckCircle,
 };
 
 export function JobDetailPage() {
@@ -43,6 +70,9 @@ export function JobDetailPage() {
     variant: 'primary',
     onConfirm: () => {},
   });
+  const [editingStepKey, setEditingStepKey] = useState(null);
+  const [editingDateValue, setEditingDateValue] = useState('');
+  const [savingDate, setSavingDate] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -113,6 +143,34 @@ export function JobDetailPage() {
     setFormOpen(false);
     setEditingPayment(null);
   };
+
+  function handleStartEditDate(step) {
+    const d = stepTsToDate(step.ts);
+    if (d) {
+      setEditingStepKey(step.key);
+      setEditingDateValue(dateToDatetimeLocal(d));
+    }
+  }
+
+  function handleCancelEditDate() {
+    setEditingStepKey(null);
+    setEditingDateValue('');
+  }
+
+  async function handleSaveDate() {
+    const field = STEP_TO_FIELD[editingStepKey];
+    if (!job?.id || !field) return;
+    setSavingDate(true);
+    try {
+      await updatePaymentTimestamps(job.id, { [field]: new Date(editingDateValue) });
+      setEditingStepKey(null);
+      setEditingDateValue('');
+    } catch (err) {
+      showConfirm({ title: '', message: err.message || 'Failed to update date', confirmLabel: 'OK' });
+    } finally {
+      setSavingDate(false);
+    }
+  }
 
   function handleDelete() {
     showConfirm({
@@ -236,17 +294,63 @@ export function JobDetailPage() {
               {statusSteps.length === 0 ? (
                 <li className="job-detail-timeline__empty">No dates recorded yet.</li>
               ) : (
-                statusSteps.map((step, index) => (
+                statusSteps.map((step) => {
+                  const StepIcon = STEP_ICONS[step.key] || Calendar;
+                  return (
                   <li key={step.key} className="job-detail-timeline__item">
-                    <span className="job-detail-timeline__dot" aria-hidden />
+                    <span className="job-detail-timeline__icon" aria-hidden>
+                      <StepIcon size={20} />
+                    </span>
                     <div className="job-detail-timeline__content">
                       <span className="job-detail-timeline__label">{step.label}</span>
-                      <span className="job-detail-timeline__date">
-                        {formatTimestamp(step.ts, { longDate: true, time: true })}
-                      </span>
+                      {editingStepKey === step.key ? (
+                        <div className="job-detail-timeline__date-edit">
+                          <input
+                            type="datetime-local"
+                            value={editingDateValue}
+                            onChange={(e) => setEditingDateValue(e.target.value)}
+                            className="job-detail-timeline__date-input"
+                            disabled={savingDate}
+                            aria-label={`Edit ${step.label} date`}
+                          />
+                          <div className="job-detail-timeline__date-actions">
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-small"
+                              onClick={handleCancelEditDate}
+                              disabled={savingDate}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-small"
+                              onClick={handleSaveDate}
+                              disabled={savingDate}
+                            >
+                              {savingDate ? 'Saving…' : 'Save'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="job-detail-timeline__date-row">
+                          <span className="job-detail-timeline__date">
+                            {formatTimestamp(step.ts, { longDate: true, time: true })}
+                          </span>
+                          <button
+                            type="button"
+                            className="job-detail-timeline__date-edit-btn"
+                            onClick={() => handleStartEditDate(step)}
+                            aria-label={`Edit ${step.label} date`}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </li>
-                ))
+                  );
+                })
               )}
             </ul>
           </section>

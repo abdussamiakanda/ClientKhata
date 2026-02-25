@@ -163,6 +163,12 @@ input.form-input[type="checkbox"] {
   min-height: 72px;
 }
 
+.form-input--readonly {
+  background: var(--color-border-subtle);
+  color: var(--color-text);
+  cursor: default;
+}
+
 .form-amount-row {
   display: flex;
   gap: 0.5rem;
