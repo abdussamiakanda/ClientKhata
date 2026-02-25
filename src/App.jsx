@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { Login } from './components/Auth';
+import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { ClientsPage } from './components/ClientsPage';
 import { ClientDetailPage } from './components/ClientDetailPage';
@@ -27,22 +28,25 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/signup" element={<Navigate to="/login" replace />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="clients" element={<ClientsPage />} />
-        <Route path="client/:clientId" element={<ClientDetailPage />} />
-        <Route path="jobs" element={<JobsPage />} />
-        <Route path="job/:jobId" element={<JobDetailPage />} />
-        <Route path="payments" element={<PaymentsPage />} />
-        <Route path="settings" element={<Settings />} />
+      <Route path="/" element={<Outlet />}>
+        <Route index element={<LandingPage />} />
+        <Route
+          path="*"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="clients" element={<ClientsPage />} />
+          <Route path="client/:clientId" element={<ClientDetailPage />} />
+          <Route path="jobs" element={<JobsPage />} />
+          <Route path="job/:jobId" element={<JobDetailPage />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
