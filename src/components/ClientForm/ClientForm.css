@@ -1,0 +1,119 @@
+.modal-content--narrow {
+  max-width: 380px;
+}
+
+.modal-content--client,
+.modal-content.modal-content--client {
+  max-width: 680px;
+}
+
+.client-form .client-form__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem 1rem;
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.client-form .client-form__field--full {
+  grid-column: 1 / -1;
+}
+
+.client-form .form-label {
+  margin-bottom: 0;
+}
+
+.client-form .form-label.form-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Checkbox: avoid text-input styles when using .form-input */
+.client-form input.form-input[type="checkbox"] {
+  width: auto;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.form-input--textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.client-form-image-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.client-form-image-area {
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  min-height: 100px;
+}
+
+.client-form-image-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.client-form-image-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.client-form-image-upload-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.client-form-image-upload:hover .client-form-image-upload-text {
+  color: var(--color-primary);
+}
+
+.client-form-image-preview-wrap {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.client-form-image-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.client-form-image-remove {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .modal-content--client {
+    max-width: none;
+  }
+
+  .client-form .client-form__fields {
+    grid-template-columns: 1fr;
+  }
+}

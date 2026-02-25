@@ -1,0 +1,122 @@
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.confirm-modal-content {
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 480px) {
+  .confirm-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .confirm-modal-content {
+    max-width: none;
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 12px 12px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .confirm-modal-header {
+    padding: 1rem 1rem 1rem 1.25rem;
+  }
+
+  .confirm-modal-header .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .confirm-modal-body {
+    padding: 1rem 1.25rem 0.25rem;
+  }
+
+  .confirm-modal-footer {
+    flex-direction: column;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.5rem;
+  }
+
+  .confirm-modal-footer .btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
+
+.confirm-modal-footer .btn + .btn {
+  margin-left: 0;
+}
+
+.confirm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.confirm-modal-header .modal-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.confirm-modal-header .modal-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.confirm-modal-header .modal-close:hover {
+  background: var(--color-border-subtle);
+  color: var(--color-text);
+}
+
+.confirm-modal-body {
+  padding: 1rem 1.25rem 0.25rem;
+}
+
+.confirm-modal-message {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.confirm-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.confirm-modal-footer .btn + .btn {
+  margin-left: 0;
+}

@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only these emails can read/write. Add or remove emails as needed.
+    function isAllowedUser() {
+      return request.auth != null
+        && request.auth.token.email in [
+          'you@example.com',
+          'teammate@example.com'
+        ];
+    }
+    match /clients/{clientId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /payments/{paymentId} {
+      allow read, write: if isAllowedUser();
+    }
+    match /payment_records/{recordId} {
+      allow read, write: if isAllowedUser();
+    }
+  }
+}

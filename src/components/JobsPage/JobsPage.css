@@ -1,0 +1,36 @@
+.jobs-page__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Reuse view-toggle from Dashboard if needed – ensure it's available */
+.view-toggle {
+  display: flex;
+  background: var(--color-border);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.view-toggle-btn {
+  padding: 0.4rem 0.875rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-toggle-btn:hover {
+  color: var(--color-text);
+}
+
+.view-toggle-btn--active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}

@@ -1,0 +1,67 @@
+/* ClientKhata – design tokens and theme variables */
+
+:root,
+[data-theme="light"] {
+  /* Brand */
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-muted: rgba(13, 148, 136, 0.12);
+  --color-accent: #14b8a6;
+
+  /* Surfaces */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+
+  /* Text */
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  /* States */
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-success: #059669;
+  --color-success-bg: #ecfdf5;
+  --color-warning: #d97706;
+  --color-warning-bg: #fffbeb;
+
+  /* Auth / login page */
+  --auth-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0d9488 100%);
+  --auth-card-bg: #ffffff;
+  --auth-card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --auth-title-color: #0f172a;
+  --auth-subtitle-color: #64748b;
+}
+
+[data-theme="dark"] {
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #5eead4;
+  --color-primary-muted: rgba(45, 212, 191, 0.15);
+  --color-accent: #5eead4;
+
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-border: #334155;
+  --color-border-subtle: #1e293b;
+
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #0f172a;
+
+  --color-error: #f87171;
+  --color-error-bg: #450a0a;
+  --color-success: #34d399;
+  --color-success-bg: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-bg: #422006;
+
+  --auth-bg: linear-gradient(160deg, #020617 0%, #0f172a 50%, #134e4a 100%);
+  --auth-card-bg: #1e293b;
+  --auth-card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --auth-title-color: #f1f5f9;
+  --auth-subtitle-color: #94a3b8;
+}
