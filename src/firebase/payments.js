@@ -67,11 +67,20 @@ export async function updatePayment(paymentId, data) {
     payload.paymentRecordedAt = serverTimestamp();
   }
   if (payload.status && JOB_STATUSES.includes(payload.status)) {
-    const tsKey = STATUS_TIMESTAMP_KEYS[payload.status];
+    const newStatus = payload.status;
+    const setDeliveredAt = payload.setDeliveredAt === true;
+    delete payload.setDeliveredAt;
+    const statusOrder = { Pending: 0, Ongoing: 1, Delivered: 2, Paid: 3 };
+    const newOrder = statusOrder[newStatus];
+    // When moving backward, clear timestamps for all statuses after the new one (supports corrections: e.g. Delivered → Ongoing)
+    if (newOrder < 3) payload.paidAt = deleteField();
+    if (newOrder < 2) payload.deliveredAt = deleteField();
+    if (newOrder < 1) payload.ongoingAt = deleteField();
+    const tsKey = STATUS_TIMESTAMP_KEYS[newStatus];
     if (tsKey) payload[tsKey] = serverTimestamp();
-    payload.isDelivered = payload.status === 'Delivered' || payload.status === 'Paid';
-    if (payload.status === 'Delivered') {
-      payload.paidAt = deleteField();
+    if (newStatus === 'Paid' && setDeliveredAt) payload.deliveredAt = serverTimestamp();
+    payload.isDelivered = newStatus === 'Delivered' || newStatus === 'Paid';
+    if (newStatus === 'Delivered') {
       payload.paymentRecordedAt = deleteField();
     }
   }

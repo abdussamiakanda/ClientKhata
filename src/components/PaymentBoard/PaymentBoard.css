@@ -181,6 +181,13 @@
   pointer-events: auto;
 }
 
+@media (max-width: 600px), (hover: none) {
+  .board-card-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .board-card-actions .board-card-action {
   width: 28px;
   height: 28px;

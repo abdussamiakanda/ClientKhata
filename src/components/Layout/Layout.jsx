@@ -4,13 +4,14 @@ import { Link, NavLink } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
-import { Home, Users, Briefcase, Banknote, Settings, LogOut, User, ChevronDown } from 'lucide-react';
+import { Home, Users, Briefcase, Banknote, Settings, LogOut, User, ChevronDown, Menu, X } from 'lucide-react';
 import { BrandIcon } from '../BrandIcon';
 import './Layout.css';
 
 export function Layout() {
   const { user } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -25,6 +26,13 @@ export function Layout() {
     }
   }, [dropdownOpen]);
 
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [sidebarOpen]);
+
   function handleLogout() {
     setDropdownOpen(false);
     signOut(auth);
@@ -36,10 +44,20 @@ export function Layout() {
     <div className="app-layout">
       <header className="app-header">
         <div className="app-header__inner">
-        <Link to="/dashboard" className="app-logo">
-          <BrandIcon size={28} className="app-logo__icon" />
-          ClientKhata
-        </Link>
+        <div className="app-header__brand-wrap">
+          <button
+            type="button"
+            className="app-header__sidebar-toggle"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu size={24} />
+          </button>
+          <Link to="/dashboard" className="app-logo">
+            <BrandIcon size={28} className="app-logo__icon" />
+            ClientKhata
+          </Link>
+        </div>
         <nav className="app-nav">
           <NavLink to="/dashboard" className={({ isActive }) => `app-nav__link ${isActive ? 'app-nav__link--active' : ''}`} end>
             <Home size={18} className="app-nav__icon" />
@@ -94,6 +112,48 @@ export function Layout() {
         </div>
         </div>
       </header>
+      <div
+        className={`app-sidebar-overlay ${sidebarOpen ? 'app-sidebar-overlay--open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        onKeyDown={(e) => e.key === 'Escape' && setSidebarOpen(false)}
+        role="button"
+        tabIndex={-1}
+        aria-hidden={!sidebarOpen}
+      />
+      <aside className={`app-sidebar ${sidebarOpen ? 'app-sidebar--open' : ''}`} aria-label="Main navigation">
+        <div className="app-sidebar__header">
+          <Link to="/dashboard" className="app-sidebar__title" onClick={() => setSidebarOpen(false)}>
+            <BrandIcon size={24} className="app-sidebar__title-icon" />
+            <span>ClientKhata</span>
+          </Link>
+          <button
+            type="button"
+            className="app-sidebar__close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <nav className="app-sidebar__nav">
+          <NavLink to="/dashboard" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} end onClick={() => setSidebarOpen(false)}>
+            <Home size={20} className="app-sidebar__icon" />
+            <span>Home</span>
+          </NavLink>
+          <NavLink to="/clients" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
+            <Users size={20} className="app-sidebar__icon" />
+            <span>Clients</span>
+          </NavLink>
+          <NavLink to="/jobs" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
+            <Briefcase size={20} className="app-sidebar__icon" />
+            <span>Jobs</span>
+          </NavLink>
+          <NavLink to="/payments" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
+            <Banknote size={20} className="app-sidebar__icon" />
+            <span>Payments</span>
+          </NavLink>
+        </nav>
+      </aside>
       <main className="app-main">
         <Outlet />
       </main>

@@ -13,7 +13,7 @@ import './JobDetailPage.css';
 
 const STATUS_LABELS = {
   Pending: 'Pending',
-  Ongoing: 'Ongoing',
+  Ongoing: 'Started working',
   Delivered: 'Delivered',
   Paid: 'Paid',
 };
@@ -72,16 +72,23 @@ export function JobDetailPage() {
   }, [paymentRecords, jobId]);
 
   const statusSteps = useMemo(() => {
-    const steps = [
-      { key: 'created', label: 'Created', ts: job?.timestamp },
-      ...JOB_STATUSES.map((status) => ({
-        key: status,
-        label: STATUS_LABELS[status],
-        ts: job?.[STATUS_DATE_KEYS[status]],
-      })),
-    ];
-    return steps.filter((s) => s.ts != null);
-  }, [job]);
+    const created = job?.timestamp != null ? [{ key: 'created', label: 'Created', ts: job.timestamp }] : [];
+    const jobRecords = (jobId && paymentRecords.filter((r) => r.jobId === jobId)) || [];
+    const latestPaymentAt = jobRecords.length > 0
+      ? jobRecords.reduce((latest, r) => {
+          const t = r.paidAt?.toMillis?.() ?? (r.paidAt?.seconds != null ? r.paidAt.seconds * 1000 : 0);
+          return t > latest ? t : latest;
+        }, 0)
+      : null;
+    const paidTs = job?.paidAt ?? (job?.status === 'Paid' && latestPaymentAt ? { toDate: () => new Date(latestPaymentAt) } : null);
+    // Omit Pending from timeline (created and pending are the same date)
+    const statusStepsOnly = JOB_STATUSES.filter((s) => s !== 'Pending').map((status) => ({
+      key: status,
+      label: STATUS_LABELS[status],
+      ts: status === 'Paid' ? paidTs : job?.[STATUS_DATE_KEYS[status]],
+    }));
+    return [...created, ...statusStepsOnly].filter((s) => s.ts != null);
+  }, [job, jobId, paymentRecords]);
 
   const closeConfirmModal = () =>
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));

@@ -152,9 +152,9 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                           <CheckCircle size={14} />
                           Paid in full
                         </>
-                      ) : job.status === 'Delivered' ? (
+                      ) : totalPaid > 0 ? (
                         <>
-                          <PackageCheck size={14} />
+                          {job.status === 'Delivered' ? <PackageCheck size={14} /> : job.status === 'Ongoing' ? <PlayCircle size={14} /> : <Clock size={14} />}
                           Paid {formatAmount(totalPaid, currency)} of {formatAmount(job.amount, currency)}
                         </>
                       ) : job.status === 'Ongoing' ? (

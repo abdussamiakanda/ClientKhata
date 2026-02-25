@@ -98,7 +98,8 @@ export function JobsPage() {
         const job = payments.find((p) => p.id === jobId);
         const totalPaid = totalPaidByJob[jobId] || 0;
         if (job && totalPaid >= Number(job.amount) && Number(job.amount) > 0) {
-          newStatus = 'Paid';
+          await updatePayment(jobId, { status: 'Paid', setDeliveredAt: true });
+          return;
         }
       }
       await updatePayment(jobId, { status: newStatus });
