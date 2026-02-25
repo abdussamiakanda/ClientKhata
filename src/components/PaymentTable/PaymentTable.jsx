@@ -5,16 +5,33 @@ import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { Search, Pencil, Trash2, Eye } from 'lucide-react';
 import './PaymentTable.css';
 
-/**
- * Group payments by clientId (first row in each group shows client name).
- */
-function groupByClient(payments) {
-  const seen = new Set();
-  return payments.map((payment) => {
-    const key = payment.clientId || '';
-    const isFirst = key ? !seen.has(key) : true;
-    if (key) seen.add(key);
-    return { groupKey: key, isFirst, payment };
+/** Same field as shown in Status column: pendingAt / ongoingAt / deliveredAt / paidAt. Fallback to timestamp. */
+function getStatusTimestampMs(p) {
+  const status = p?.status;
+  let t = null;
+  if (status === 'Pending') t = p.pendingAt ?? p.timestamp;
+  else if (status === 'Ongoing') t = p.ongoingAt ?? p.timestamp;
+  else if (status === 'Delivered') t = p.deliveredAt ?? p.timestamp;
+  else if (status === 'Paid') t = p.paidAt ?? p.timestamp;
+  else t = p.timestamp;
+  if (!t) return 0;
+  if (typeof t.toMillis === 'function') return t.toMillis();
+  if (t instanceof Date) return t.getTime();
+  if (typeof t?.seconds === 'number') return t.seconds * 1000;
+  return 0;
+}
+
+/** Sort by status (Pending → Ongoing → Delivered → Paid) then by status date (newest first). */
+function sortByStatusAndDate(payments) {
+  const statusOrder = JOB_STATUSES.reduce((acc, s, i) => {
+    acc[s] = i;
+    return acc;
+  }, {});
+  return [...payments].sort((a, b) => {
+    const statusA = statusOrder[a.status] ?? 0;
+    const statusB = statusOrder[b.status] ?? 0;
+    if (statusA !== statusB) return statusA - statusB;
+    return getStatusTimestampMs(b) - getStatusTimestampMs(a);
   });
 }
 
@@ -38,7 +55,7 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
     return list;
   }, [payments, search, filterStatus]);
 
-  const rows = useMemo(() => groupByClient(filtered), [filtered]);
+  const rows = useMemo(() => sortByStatusAndDate(filtered), [filtered]);
 
   function getStatusTimestamp(payment) {
     const status = payment.status;
@@ -97,10 +114,10 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
                 </td>
               </tr>
             ) : (
-              rows.map(({ isFirst, payment }, index) => (
+              rows.map((payment, index) => (
                 <tr key={payment.id} className={index % 2 === 1 ? 'row-alt' : ''}>
                   <td className="col-client">
-                    {isFirst ? (payment.clientName || '—') : ''}
+                    {payment.clientName || '—'}
                   </td>
                   <td className="col-job">
                     {payment.workDescription || '—'}
@@ -130,21 +147,19 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
                     </Link>
                     <button
                       type="button"
-                      className="btn btn-small btn-secondary"
+                      className="btn btn-small btn-secondary btn-icon"
                       onClick={() => onEdit(payment)}
                       aria-label="Edit"
                     >
                       <Pencil size={14} />
-                      Edit
                     </button>
                     <button
                       type="button"
-                      className="btn btn-small btn-danger"
+                      className="btn btn-small btn-danger btn-icon"
                       onClick={() => onDelete(payment)}
                       aria-label="Delete"
                     >
                       <Trash2 size={14} />
-                      Delete
                     </button>
                   </td>
                 </tr>

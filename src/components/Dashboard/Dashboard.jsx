@@ -1,12 +1,48 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { subscribePayments } from '../../firebase/payments';
 import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
 import { formatAmount } from '../../utils/format';
-import { Users, Briefcase, Banknote } from 'lucide-react';
+import { Users, Briefcase, Banknote, Calendar, ChevronDown, Check } from 'lucide-react';
 import './Dashboard.css';
+
+function getJobTimestampMs(p) {
+  const t = p?.timestamp;
+  if (!t) return null;
+  if (typeof t.toMillis === 'function') return t.toMillis();
+  if (t instanceof Date) return t.getTime();
+  if (typeof t?.seconds === 'number') return t.seconds * 1000;
+  return null;
+}
+
+const DATE_RANGES = [
+  { value: 'all', label: 'All time' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+  { value: '90d', label: 'Last 90 days' },
+  { value: 'thisMonth', label: 'This month' },
+];
+
+function getRangeBounds(value) {
+  const now = Date.now();
+  if (value === 'all') return { start: 0, end: now };
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+  const end = endOfToday.getTime();
+  let start;
+  if (value === '7d') start = now - 7 * 24 * 60 * 60 * 1000;
+  else if (value === '30d') start = now - 30 * 24 * 60 * 60 * 1000;
+  else if (value === '90d') start = now - 90 * 24 * 60 * 60 * 1000;
+  else if (value === 'thisMonth') {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    start = d.getTime();
+  } else start = 0;
+  return { start, end };
+}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -15,6 +51,18 @@ export function Dashboard() {
   const [records, setRecords] = useState([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
   const [paymentsLoaded, setPaymentsLoaded] = useState(false);
+  const [dateRange, setDateRange] = useState('all');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef(null);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handleClickOutside = (e) => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [filterOpen]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -44,13 +92,22 @@ export function Dashboard() {
     return map;
   }, [records]);
 
+  const filteredPayments = useMemo(() => {
+    if (dateRange === 'all') return payments;
+    const { start, end } = getRangeBounds(dateRange);
+    return payments.filter((p) => {
+      const ms = getJobTimestampMs(p);
+      return ms != null && ms >= start && ms <= end;
+    });
+  }, [payments, dateRange]);
+
   const stats = useMemo(() => {
     const byCurrency = {};
     let deliveredCount = 0;
     let paidCount = 0;
     let outstandingCount = 0;
 
-    payments.forEach((p) => {
+    filteredPayments.forEach((p) => {
       const curr = p.currency && ['BDT', 'USD', 'EUR'].includes(p.currency) ? p.currency : 'BDT';
       if (!byCurrency[curr]) {
         byCurrency[curr] = {
@@ -91,12 +148,12 @@ export function Dashboard() {
     return {
       byCurrency,
       currencies,
-      totalJobs: payments.length,
+      totalJobs: filteredPayments.length,
       deliveredCount,
       paidCount,
       outstandingCount,
     };
-  }, [payments, totalPaidByJob]);
+  }, [filteredPayments, totalPaidByJob]);
 
   return (
     <div className="page dashboard-page">
@@ -115,6 +172,44 @@ export function Dashboard() {
       ) : (
         <>
       <section className="dashboard-stats" aria-label="Overview statistics">
+        <div className="dashboard-stats__filter" ref={filterRef}>
+          <span className="dashboard-stats__filter-label">Period</span>
+          <div className="dashboard-stats__filter-select">
+            <button
+              type="button"
+              className="dashboard-stats__filter-trigger"
+              onClick={() => setFilterOpen((o) => !o)}
+              aria-expanded={filterOpen}
+              aria-haspopup="listbox"
+              aria-label="Select date range"
+            >
+              <span className="dashboard-stats__filter-trigger-text">
+                {DATE_RANGES.find((r) => r.value === dateRange)?.label ?? 'All time'}
+              </span>
+              <ChevronDown size={16} className={`dashboard-stats__filter-chevron ${filterOpen ? 'dashboard-stats__filter-chevron--open' : ''}`} aria-hidden />
+            </button>
+            {filterOpen && (
+              <div className="dashboard-stats__filter-dropdown" role="listbox" aria-label="Date range options">
+                {DATE_RANGES.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="option"
+                    aria-selected={dateRange === value}
+                    className={`dashboard-stats__filter-option ${dateRange === value ? 'dashboard-stats__filter-option--active' : ''}`}
+                    onClick={() => {
+                      setDateRange(value);
+                      setFilterOpen(false);
+                    }}
+                  >
+                    <span>{label}</span>
+                    {dateRange === value && <Check size={14} className="dashboard-stats__filter-check" aria-hidden />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         <h2 className="dashboard-stats__heading">Money</h2>
         <div className="dashboard-stats__grid">
           {stats.currencies.length === 0 ? (

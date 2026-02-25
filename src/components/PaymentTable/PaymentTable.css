@@ -130,6 +130,11 @@
   min-width: 140px;
 }
 
+.payment-table th.col-actions,
+.payment-table td.col-actions {
+  text-align: right;
+}
+
 .col-actions .btn {
   margin-right: 0.5rem;
   display: inline-flex;

@@ -25,6 +25,22 @@ function getPaidAtMs(job) {
   return null;
 }
 
+/** Same date as shown in table Status column: status-specific date or timestamp. */
+function getStatusTimestampMs(p) {
+  const status = p?.status;
+  let t = null;
+  if (status === 'Pending') t = p.pendingAt ?? p.timestamp;
+  else if (status === 'Ongoing') t = p.ongoingAt ?? p.timestamp;
+  else if (status === 'Delivered') t = p.deliveredAt ?? p.timestamp;
+  else if (status === 'Paid') t = p.paidAt ?? p.timestamp;
+  else t = p.timestamp;
+  if (!t) return 0;
+  if (typeof t.toMillis === 'function') return t.toMillis();
+  if (t instanceof Date) return t.getTime();
+  if (typeof t?.seconds === 'number') return t.seconds * 1000;
+  return 0;
+}
+
 export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, onEdit, onDelete }) {
   const byStatus = useMemo(() => {
     const map = {};
@@ -38,6 +54,9 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
         if (paidMs != null && paidMs < oneMonthAgo) return;
       }
       map[s].push(p);
+    });
+    JOB_STATUSES.forEach((status) => {
+      (map[status] || []).sort((a, b) => getStatusTimestampMs(b) - getStatusTimestampMs(a));
     });
     return map;
   }, [payments]);

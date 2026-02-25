@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { subscribePayments, deletePayment, updatePaymentTimestamps } from '../../firebase/payments';
-import { subscribePaymentRecords } from '../../firebase/paymentRecords';
+import { subscribePayments, deletePayment, updatePayment, updatePaymentTimestamps } from '../../firebase/payments';
+import { subscribePaymentRecords, addPaymentRecord, deletePaymentRecord } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
 import { PaymentForm } from '../PaymentForm';
 import { ConfirmModal } from '../ConfirmModal';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
-import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText, CalendarPlus, PlayCircle, PackageCheck, CheckCircle } from 'lucide-react';
+import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText, CalendarPlus, PlayCircle, PackageCheck, CheckCircle, Plus, X } from 'lucide-react';
 import './JobDetailPage.css';
 
 const STATUS_LABELS = {
@@ -73,6 +73,10 @@ export function JobDetailPage() {
   const [editingStepKey, setEditingStepKey] = useState(null);
   const [editingDateValue, setEditingDateValue] = useState('');
   const [savingDate, setSavingDate] = useState(false);
+  const [addPaymentOpen, setAddPaymentOpen] = useState(false);
+  const [addPaymentForm, setAddPaymentForm] = useState({ amount: '', note: '' });
+  const [addPaymentError, setAddPaymentError] = useState('');
+  const [addPaymentSaving, setAddPaymentSaving] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -100,6 +104,18 @@ export function JobDetailPage() {
       .filter((r) => r.jobId === jobId)
       .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
   }, [paymentRecords, jobId]);
+
+  const jobRecords = useMemo(() => {
+    if (!jobId) return [];
+    return [...paymentRecords.filter((r) => r.jobId === jobId)].sort(
+      (a, b) => (b.paidAt?.toMillis?.() ?? 0) - (a.paidAt?.toMillis?.() ?? 0)
+    );
+  }, [paymentRecords, jobId]);
+
+  const remainingAmount = useMemo(() => {
+    if (!job?.amount) return 0;
+    return Math.max(0, Number(job.amount) - totalPaid);
+  }, [job, totalPaid]);
 
   const statusSteps = useMemo(() => {
     const created = job?.timestamp != null ? [{ key: 'created', label: 'Created', ts: job.timestamp }] : [];
@@ -189,6 +205,68 @@ export function JobDetailPage() {
       },
     });
   }
+
+  const openAddPayment = () => {
+    setAddPaymentForm({ amount: remainingAmount > 0 ? String(remainingAmount) : '', note: '' });
+    setAddPaymentError('');
+    setAddPaymentOpen(true);
+  };
+
+  const handleAddPaymentSubmit = async (e) => {
+    e.preventDefault();
+    setAddPaymentError('');
+    const amount = parseFloat(addPaymentForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setAddPaymentError('Enter a valid amount.');
+      return;
+    }
+    if (amount > remainingAmount) {
+      const curr = job?.currency ?? 'BDT';
+      setAddPaymentError(`Remaining is ${formatAmount(remainingAmount, curr)}. Enter up to that amount.`);
+      return;
+    }
+    setAddPaymentSaving(true);
+    try {
+      await addPaymentRecord(
+        jobId,
+        amount,
+        addPaymentForm.note.trim() || undefined,
+        user?.uid,
+        Number(job.amount),
+        totalPaid,
+        job?.status || 'Delivered'
+      );
+      setAddPaymentForm({ amount: '', note: '' });
+      setAddPaymentOpen(false);
+    } catch (err) {
+      setAddPaymentError(err.message || 'Failed to add payment');
+    } finally {
+      setAddPaymentSaving(false);
+    }
+  };
+
+  const handleRemovePaymentRecord = (record) => {
+    const curr = job?.currency ?? 'BDT';
+    showConfirm({
+      title: 'Remove payment?',
+      message: `Remove ${formatAmount(record.amount, curr)} from this job?${job?.status === 'Paid' ? ' Job will move back to Delivered.' : ''}`,
+      confirmLabel: 'Remove',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await deletePaymentRecord(record.id);
+          const newTotal = totalPaid - Number(record.amount);
+          if (newTotal < Number(job?.amount) && job?.status === 'Paid') {
+            await updatePayment(job.id, { status: 'Delivered' });
+          }
+          closeConfirmModal();
+        } catch (err) {
+          showConfirm({ title: '', message: err.message || 'Failed to remove payment', confirmLabel: 'OK' });
+        }
+      },
+    });
+  };
 
   if (loaded && !job && jobId) {
     return (
@@ -354,7 +432,113 @@ export function JobDetailPage() {
               )}
             </ul>
           </section>
+
+          <section className="job-detail-section job-detail-payments" aria-labelledby="job-payments-title">
+            <div className="job-detail-payments__header">
+              <h2 id="job-payments-title" className="job-detail-section__title job-detail-payments__title">
+                <DollarSign size={20} />
+                Payments
+              </h2>
+              {remainingAmount > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={openAddPayment}
+                >
+                  <Plus size={18} />
+                  Add payment
+                </button>
+              )}
+            </div>
+            <div className="job-detail-payments__summary">
+              <span className="job-detail-payments__total">
+                Total: {formatAmount(job.amount, job.currency ?? 'BDT')}
+              </span>
+              <span className="job-detail-payments__paid">
+                Paid: {formatAmount(totalPaid, job.currency ?? 'BDT')}
+              </span>
+              {remainingAmount > 0 && (
+                <span className="job-detail-payments__remaining">
+                  Remaining: {formatAmount(remainingAmount, job.currency ?? 'BDT')}
+                </span>
+              )}
+            </div>
+            {jobRecords.length > 0 ? (
+              <ul className="job-detail-payments__list">
+                {jobRecords.map((r) => (
+                  <li key={r.id} className="job-detail-payments__item">
+                    <span className="job-detail-payments__amount">{formatAmount(r.amount, job.currency ?? 'BDT')}</span>
+                    <span className="job-detail-payments__date">{formatTimestamp(r.paidAt, { short: true })}</span>
+                    {r.note && <span className="job-detail-payments__note">{r.note}</span>}
+                    <button
+                      type="button"
+                      className="btn btn-icon btn-small btn-danger"
+                      onClick={() => handleRemovePaymentRecord(r)}
+                      aria-label="Remove payment"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="job-detail-payments__empty">No payments recorded yet for this job.</p>
+            )}
+          </section>
         </>
+      )}
+
+      {addPaymentOpen && job && (
+        <div className="modal-overlay" onClick={() => setAddPaymentOpen(false)} role="presentation">
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-payment-title"
+          >
+            <div className="modal-header">
+              <h2 id="add-payment-title" className="modal-title">Add payment</h2>
+              <button type="button" className="modal-close" onClick={() => setAddPaymentOpen(false)} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddPaymentSubmit} className="payment-form">
+              {addPaymentError && <div className="form-error">{addPaymentError}</div>}
+              <label className="form-label">
+                Amount * <span className="form-hint">In {job.currency ?? 'BDT'}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={addPaymentForm.amount}
+                  onChange={(e) => setAddPaymentForm((p) => ({ ...p, amount: e.target.value }))}
+                  className="form-input"
+                  placeholder="0"
+                  required
+                />
+              </label>
+              <label className="form-label">
+                Note
+                <input
+                  type="text"
+                  value={addPaymentForm.note}
+                  onChange={(e) => setAddPaymentForm((p) => ({ ...p, note: e.target.value }))}
+                  className="form-input"
+                  placeholder="Optional"
+                />
+              </label>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setAddPaymentOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={addPaymentSaving}>
+                  {addPaymentSaving ? 'Adding…' : 'Add payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {formOpen && (
