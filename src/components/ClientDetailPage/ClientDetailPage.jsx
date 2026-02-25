@@ -85,6 +85,20 @@ export function ClientDetailPage() {
     return map;
   }, [clientPaymentRecords]);
 
+  const clientStats = useMemo(() => {
+    const totalValue = clientJobs.reduce((sum, j) => sum + (Number(j.amount) || 0), 0);
+    const totalPaid = clientPaymentRecords.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const outstanding = Math.max(0, totalValue - totalPaid);
+    const currency = clientJobs[0]?.currency ?? 'BDT';
+    return {
+      jobsCount: clientJobs.length,
+      totalValue,
+      totalPaid,
+      outstanding,
+      currency,
+    };
+  }, [clientJobs, clientPaymentRecords]);
+
   const closeConfirmModal = () =>
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
 
@@ -244,6 +258,28 @@ export function ClientDetailPage() {
                   <span>{client.notes}</span>
                 </p>
               )}
+            </div>
+          </section>
+
+          {/* Client stats */}
+          <section className="client-detail-stats" aria-label="Client overview">
+            <div className="client-detail-stats__grid">
+              <div className="client-detail-stat">
+                <span className="client-detail-stat__label">Jobs</span>
+                <span className="client-detail-stat__value client-detail-stat__value--number">{clientStats.jobsCount}</span>
+              </div>
+              <div className="client-detail-stat">
+                <span className="client-detail-stat__label">Total value</span>
+                <span className="client-detail-stat__value">{formatAmount(clientStats.totalValue, clientStats.currency)}</span>
+              </div>
+              <div className="client-detail-stat">
+                <span className="client-detail-stat__label">Paid</span>
+                <span className="client-detail-stat__value client-detail-stat__value--paid">{formatAmount(clientStats.totalPaid, clientStats.currency)}</span>
+              </div>
+              <div className="client-detail-stat">
+                <span className="client-detail-stat__label">Outstanding</span>
+                <span className="client-detail-stat__value client-detail-stat__value--outstanding">{formatAmount(clientStats.outstanding, clientStats.currency)}</span>
+              </div>
             </div>
           </section>
 

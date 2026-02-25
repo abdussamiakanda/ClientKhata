@@ -211,48 +211,93 @@ export function Dashboard() {
           </div>
         </div>
         <h2 className="dashboard-stats__heading">Money</h2>
-        <div className="dashboard-stats__grid">
-          {stats.currencies.length === 0 ? (
-            <div className="dashboard-stat dashboard-stat--total">
-              <span className="dashboard-stat__label">Total</span>
+        <div className="dashboard-stats__grid dashboard-stats__grid--money">
+          <div className="dashboard-stat dashboard-stat--total">
+            <span className="dashboard-stat__label">Total</span>
+            {stats.currencies.length === 0 ? (
               <span className="dashboard-stat__value">{formatAmount(0)}</span>
-            </div>
-          ) : (
-            stats.currencies.map((curr) => {
-              const s = stats.byCurrency[curr];
-              return (
-                <div key={curr} className="dashboard-stat-group">
-                  <div className="dashboard-stat-group__label">{curr}</div>
-                  <div className="dashboard-stats__grid dashboard-stats__grid--nested">
-                    <div className="dashboard-stat dashboard-stat--total">
-                      <span className="dashboard-stat__label">Total</span>
-                      <span className="dashboard-stat__value">{formatAmount(s.totalAmount, curr)}</span>
-                    </div>
-                    <div className="dashboard-stat dashboard-stat--paid">
-                      <span className="dashboard-stat__label">Paid</span>
-                      <span className="dashboard-stat__value">{formatAmount(s.paidAmount, curr)}</span>
-                      <span className="dashboard-stat__meta">{s.paidCount} job{s.paidCount !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="dashboard-stat dashboard-stat--pending">
-                      <span className="dashboard-stat__label">Pending</span>
-                      <span className="dashboard-stat__value">{formatAmount(s.pendingAmount, curr)}</span>
-                      <span className="dashboard-stat__meta">{s.pendingCount} job{s.pendingCount !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="dashboard-stat dashboard-stat--ongoing">
-                      <span className="dashboard-stat__label">Ongoing</span>
-                      <span className="dashboard-stat__value">{formatAmount(s.ongoingAmount, curr)}</span>
-                      <span className="dashboard-stat__meta">{s.ongoingCount} job{s.ongoingCount !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="dashboard-stat dashboard-stat--outstanding">
-                      <span className="dashboard-stat__label">Outstanding</span>
-                      <span className="dashboard-stat__value">{formatAmount(s.outstandingAmount, curr)}</span>
-                      <span className="dashboard-stat__meta">{s.outstandingCount} to collect</span>
-                    </div>
-                  </div>
+            ) : (
+              <div className="dashboard-stat__currencies">
+                {stats.currencies.map((curr) => (
+                  <span key={curr} className="dashboard-stat__currency-row">
+                    {curr} {formatAmount(stats.byCurrency[curr].totalAmount, curr)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="dashboard-stat dashboard-stat--paid">
+            <span className="dashboard-stat__label">Paid</span>
+            {stats.currencies.length === 0 ? (
+              <span className="dashboard-stat__value">{formatAmount(0)}</span>
+            ) : (
+              <>
+                <div className="dashboard-stat__currencies">
+                  {stats.currencies.map((curr) => (
+                    <span key={curr} className="dashboard-stat__currency-row">
+                      {curr} {formatAmount(stats.byCurrency[curr].paidAmount, curr)}
+                    </span>
+                  ))}
                 </div>
-              );
-            })
-          )}
+                <span className="dashboard-stat__meta">{stats.paidCount} job{stats.paidCount !== 1 ? 's' : ''}</span>
+              </>
+            )}
+          </div>
+          <div className="dashboard-stat dashboard-stat--pending">
+            <span className="dashboard-stat__label">Pending</span>
+            {stats.currencies.length === 0 ? (
+              <span className="dashboard-stat__value">{formatAmount(0)}</span>
+            ) : (
+              <>
+                <div className="dashboard-stat__currencies">
+                  {stats.currencies.map((curr) => (
+                    <span key={curr} className="dashboard-stat__currency-row">
+                      {curr} {formatAmount(stats.byCurrency[curr].pendingAmount, curr)}
+                    </span>
+                  ))}
+                </div>
+                <span className="dashboard-stat__meta">
+                  {stats.currencies.reduce((n, c) => n + (stats.byCurrency[c].pendingCount || 0), 0)} job{stats.currencies.reduce((n, c) => n + (stats.byCurrency[c].pendingCount || 0), 0) !== 1 ? 's' : ''}
+                </span>
+              </>
+            )}
+          </div>
+          <div className="dashboard-stat dashboard-stat--ongoing">
+            <span className="dashboard-stat__label">Ongoing</span>
+            {stats.currencies.length === 0 ? (
+              <span className="dashboard-stat__value">{formatAmount(0)}</span>
+            ) : (
+              <>
+                <div className="dashboard-stat__currencies">
+                  {stats.currencies.map((curr) => (
+                    <span key={curr} className="dashboard-stat__currency-row">
+                      {curr} {formatAmount(stats.byCurrency[curr].ongoingAmount, curr)}
+                    </span>
+                  ))}
+                </div>
+                <span className="dashboard-stat__meta">
+                  {stats.currencies.reduce((n, c) => n + (stats.byCurrency[c].ongoingCount || 0), 0)} job{stats.currencies.reduce((n, c) => n + (stats.byCurrency[c].ongoingCount || 0), 0) !== 1 ? 's' : ''}
+                </span>
+              </>
+            )}
+          </div>
+          <div className="dashboard-stat dashboard-stat--outstanding">
+            <span className="dashboard-stat__label">Outstanding</span>
+            {stats.currencies.length === 0 ? (
+              <span className="dashboard-stat__value">{formatAmount(0)}</span>
+            ) : (
+              <>
+                <div className="dashboard-stat__currencies">
+                  {stats.currencies.map((curr) => (
+                    <span key={curr} className="dashboard-stat__currency-row">
+                      {curr} {formatAmount(stats.byCurrency[curr].outstandingAmount, curr)}
+                    </span>
+                  ))}
+                </div>
+                <span className="dashboard-stat__meta">{stats.outstandingCount} to collect</span>
+              </>
+            )}
+          </div>
         </div>
 
         <h2 className="dashboard-stats__heading">Jobs</h2>

@@ -211,6 +211,53 @@
 }
 
 /* ===== Jobs section ===== */
+/* Client stats (before Jobs section) */
+.client-detail-stats {
+  margin-bottom: 2rem;
+}
+
+.client-detail-stats__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+  gap: 0.75rem;
+}
+
+.client-detail-stat {
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.client-detail-stat__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.client-detail-stat__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.client-detail-stat__value--number {
+  font-size: 1.5rem;
+}
+
+.client-detail-stat__value--paid {
+  color: var(--color-success);
+}
+
+.client-detail-stat__value--outstanding {
+  color: var(--color-primary);
+}
+
 .client-detail-section {
   margin-bottom: 2rem;
 }
