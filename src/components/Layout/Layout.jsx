@@ -64,10 +64,6 @@ export function Layout() {
             <Home size={18} className="app-nav__icon" />
             <span className="app-nav__link-text">Home</span>
           </NavLink>
-          <NavLink to="/clients" className={({ isActive }) => `app-nav__link ${isActive ? 'app-nav__link--active' : ''}`}>
-            <Users size={18} className="app-nav__icon" />
-            <span className="app-nav__link-text">Clients</span>
-          </NavLink>
           <NavLink to="/jobs" className={({ isActive }) => `app-nav__link ${isActive ? 'app-nav__link--active' : ''}`}>
             <Briefcase size={18} className="app-nav__icon" />
             <span className="app-nav__link-text">Jobs</span>
@@ -75,6 +71,10 @@ export function Layout() {
           <NavLink to="/payments" className={({ isActive }) => `app-nav__link ${isActive ? 'app-nav__link--active' : ''}`}>
             <Banknote size={18} className="app-nav__icon" />
             <span className="app-nav__link-text">Payments</span>
+          </NavLink>
+          <NavLink to="/clients" className={({ isActive }) => `app-nav__link ${isActive ? 'app-nav__link--active' : ''}`}>
+            <Users size={18} className="app-nav__icon" />
+            <span className="app-nav__link-text">Clients</span>
           </NavLink>
         </nav>
         <div className="app-header__actions" ref={dropdownRef}>
@@ -141,10 +141,6 @@ export function Layout() {
             <Home size={20} className="app-sidebar__icon" />
             <span>Home</span>
           </NavLink>
-          <NavLink to="/clients" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
-            <Users size={20} className="app-sidebar__icon" />
-            <span>Clients</span>
-          </NavLink>
           <NavLink to="/jobs" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
             <Briefcase size={20} className="app-sidebar__icon" />
             <span>Jobs</span>
@@ -152,6 +148,10 @@ export function Layout() {
           <NavLink to="/payments" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
             <Banknote size={20} className="app-sidebar__icon" />
             <span>Payments</span>
+          </NavLink>
+          <NavLink to="/clients" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
+            <Users size={20} className="app-sidebar__icon" />
+            <span>Clients</span>
           </NavLink>
         </nav>
       </aside>
