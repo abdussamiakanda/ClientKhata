@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Link, NavLink } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
@@ -10,6 +10,7 @@ import './Layout.css';
 
 export function Layout() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -35,7 +36,7 @@ export function Layout() {
 
   function handleLogout() {
     setDropdownOpen(false);
-    signOut(auth);
+    signOut(auth).then(() => navigate('/'));
   }
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
