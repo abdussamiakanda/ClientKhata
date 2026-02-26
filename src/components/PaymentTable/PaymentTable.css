@@ -51,6 +51,24 @@
   border-color: var(--color-primary);
 }
 
+.table-toolbar__filters {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.table-toolbar__filters .table-filter {
+  width: 10rem;
+  min-width: 10rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+
 .table-filter {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);
@@ -58,6 +76,30 @@
   font-size: 0.875rem;
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+.table-toolbar__date-filter {
+  margin: 0;
+  width: 10rem;
+  min-width: 10rem;
+}
+
+.table-toolbar__date-filter .date-range-filter {
+  width: 100%;
+}
+
+.table-toolbar__date-filter .date-range-filter__select {
+  width: 100%;
+}
+
+.table-toolbar__date-filter .date-range-filter__trigger {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  min-width: 0;
+  height: auto;
+  line-height: 1.25;
+  box-sizing: border-box;
 }
 
 .table-scroll {
@@ -203,6 +245,27 @@
 
   .table-search {
     min-width: 100%;
+  }
+
+  .table-toolbar__filters {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .table-toolbar__filters .table-filter {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .table-toolbar__filters .table-toolbar__date-filter {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .table-toolbar__filters .table-toolbar__date-filter .date-range-filter__trigger {
+    width: 100%;
   }
 
   .payment-table th,

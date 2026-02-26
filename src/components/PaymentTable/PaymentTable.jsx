@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
+import { getJobTimestampMs, getRangeBounds } from '../../utils/dateRange';
+import { DateRangeFilter } from '../DateRangeFilter';
 import { Search, Pencil, Trash2, Eye } from 'lucide-react';
 import './PaymentTable.css';
 
@@ -38,9 +40,23 @@ function sortByStatusAndDate(payments) {
 export function PaymentTable({ payments, onEdit, onDelete }) {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [dateRangeValue, setDateRangeValue] = useState({
+    dateRange: 'all',
+    customStartMs: null,
+    customEndMs: null,
+  });
+
+  const filteredByDate = useMemo(() => {
+    if (dateRangeValue.dateRange === 'all') return payments;
+    const { start, end } = getRangeBounds(dateRangeValue.dateRange, dateRangeValue.customStartMs, dateRangeValue.customEndMs);
+    return payments.filter((p) => {
+      const ms = getJobTimestampMs(p);
+      return ms != null && ms >= start && ms <= end;
+    });
+  }, [payments, dateRangeValue]);
 
   const filtered = useMemo(() => {
-    let list = payments;
+    let list = filteredByDate;
     const s = search.trim().toLowerCase();
     if (s) {
       list = list.filter(
@@ -53,7 +69,7 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
       list = list.filter((p) => (p.status || '') === filterStatus);
     }
     return list;
-  }, [payments, search, filterStatus]);
+  }, [filteredByDate, search, filterStatus]);
 
   const rows = useMemo(() => sortByStatusAndDate(filtered), [filtered]);
 
@@ -79,17 +95,25 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
             className="table-search"
           />
         </span>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="table-filter"
-          aria-label="Filter by status"
-        >
-          <option value="">All statuses</option>
-          {JOB_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+        <div className="table-toolbar__filters">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="table-filter"
+            aria-label="Filter by status"
+          >
+            <option value="">All statuses</option>
+            {JOB_STATUSES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <DateRangeFilter
+            value={dateRangeValue}
+            onChange={setDateRangeValue}
+            label={null}
+            className="table-toolbar__date-filter"
+          />
+        </div>
       </div>
 
       <div className="table-scroll">

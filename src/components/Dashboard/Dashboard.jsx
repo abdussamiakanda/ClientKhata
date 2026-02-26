@@ -5,44 +5,9 @@ import { subscribePayments } from '../../firebase/payments';
 import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
 import { formatAmount } from '../../utils/format';
-import { Users, Briefcase, Banknote, Calendar, ChevronDown, Check } from 'lucide-react';
+import { getJobTimestampMs, getRangeBounds, getCalendarDays, formatRangeLabel } from '../../utils/dateRange';
+import { Users, Briefcase, Banknote, ChevronDown } from 'lucide-react';
 import './Dashboard.css';
-
-function getJobTimestampMs(p) {
-  const t = p?.timestamp;
-  if (!t) return null;
-  if (typeof t.toMillis === 'function') return t.toMillis();
-  if (t instanceof Date) return t.getTime();
-  if (typeof t?.seconds === 'number') return t.seconds * 1000;
-  return null;
-}
-
-const DATE_RANGES = [
-  { value: 'all', label: 'All time' },
-  { value: '7d', label: 'Last 7 days' },
-  { value: '30d', label: 'Last 30 days' },
-  { value: '90d', label: 'Last 90 days' },
-  { value: 'thisMonth', label: 'This month' },
-];
-
-function getRangeBounds(value) {
-  const now = Date.now();
-  if (value === 'all') return { start: 0, end: now };
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-  const end = endOfToday.getTime();
-  let start;
-  if (value === '7d') start = now - 7 * 24 * 60 * 60 * 1000;
-  else if (value === '30d') start = now - 30 * 24 * 60 * 60 * 1000;
-  else if (value === '90d') start = now - 90 * 24 * 60 * 60 * 1000;
-  else if (value === 'thisMonth') {
-    const d = new Date();
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    start = d.getTime();
-  } else start = 0;
-  return { start, end };
-}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -52,7 +17,14 @@ export function Dashboard() {
   const [clientsLoaded, setClientsLoaded] = useState(false);
   const [paymentsLoaded, setPaymentsLoaded] = useState(false);
   const [dateRange, setDateRange] = useState('all');
+  const [customStartMs, setCustomStartMs] = useState(null);
+  const [customEndMs, setCustomEndMs] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+  const [pendingStartMs, setPendingStartMs] = useState(null); // first click = start; second click = end then close
   const filterRef = useRef(null);
 
   useEffect(() => {
@@ -62,6 +34,10 @@ export function Dashboard() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [filterOpen]);
+
+  useEffect(() => {
+    if (!filterOpen) setPendingStartMs(null);
   }, [filterOpen]);
 
   useEffect(() => {
@@ -94,12 +70,12 @@ export function Dashboard() {
 
   const filteredPayments = useMemo(() => {
     if (dateRange === 'all') return payments;
-    const { start, end } = getRangeBounds(dateRange);
+    const { start, end } = getRangeBounds(dateRange, customStartMs, customEndMs);
     return payments.filter((p) => {
       const ms = getJobTimestampMs(p);
       return ms != null && ms >= start && ms <= end;
     });
-  }, [payments, dateRange]);
+  }, [payments, dateRange, customStartMs, customEndMs]);
 
   const stats = useMemo(() => {
     const byCurrency = {};
@@ -184,28 +160,99 @@ export function Dashboard() {
               aria-label="Select date range"
             >
               <span className="dashboard-stats__filter-trigger-text">
-                {DATE_RANGES.find((r) => r.value === dateRange)?.label ?? 'All time'}
+                {dateRange === 'custom' && customStartMs != null && customEndMs != null
+                  ? formatRangeLabel(customStartMs, customEndMs)
+                  : 'All time'}
               </span>
               <ChevronDown size={16} className={`dashboard-stats__filter-chevron ${filterOpen ? 'dashboard-stats__filter-chevron--open' : ''}`} aria-hidden />
             </button>
             {filterOpen && (
-              <div className="dashboard-stats__filter-dropdown" role="listbox" aria-label="Date range options">
-                {DATE_RANGES.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="option"
-                    aria-selected={dateRange === value}
-                    className={`dashboard-stats__filter-option ${dateRange === value ? 'dashboard-stats__filter-option--active' : ''}`}
-                    onClick={() => {
-                      setDateRange(value);
-                      setFilterOpen(false);
-                    }}
-                  >
-                    <span>{label}</span>
-                    {dateRange === value && <Check size={14} className="dashboard-stats__filter-check" aria-hidden />}
-                  </button>
-                ))}
+              <div className="dashboard-stats__filter-dropdown" role="dialog" aria-label="Date range">
+                <div className="dashboard-stats__filter-calendar-wrap">
+                  <p className="dashboard-stats__filter-calendar-hint">
+                    {pendingStartMs == null ? 'Click start date, then end date' : 'Click end date'}
+                  </p>
+                  <div className="dashboard-stats__filter-calendar">
+                    <div className="dashboard-stats__calendar-nav">
+                      <button
+                        type="button"
+                        className="dashboard-stats__calendar-nav-btn"
+                        onClick={() => setCalendarMonth((m) => (m.month === 0 ? { year: m.year - 1, month: 11 } : { year: m.year, month: m.month - 1 }))}
+                        aria-label="Previous month"
+                      >
+                        ‹
+                      </button>
+                      <span className="dashboard-stats__calendar-title">
+                        {new Date(calendarMonth.year, calendarMonth.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </span>
+                      <button
+                        type="button"
+                        className="dashboard-stats__calendar-nav-btn"
+                        onClick={() => setCalendarMonth((m) => (m.month === 11 ? { year: m.year + 1, month: 0 } : { year: m.year, month: m.month + 1 }))}
+                        aria-label="Next month"
+                      >
+                        ›
+                      </button>
+                    </div>
+                    <div className="dashboard-stats__calendar-weekdays">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                        <span key={d} className="dashboard-stats__calendar-weekday">{d}</span>
+                      ))}
+                    </div>
+                    <div className="dashboard-stats__calendar-grid">
+                      {getCalendarDays(calendarMonth.year, calendarMonth.month).map((date, i) => {
+                        if (!date) return <div key={`empty-${i}`} className="dashboard-stats__calendar-day dashboard-stats__calendar-day--empty" />;
+                        const dayMs = date.getTime();
+                        const range = dateRange === 'custom' && customStartMs != null && customEndMs != null
+                          ? { startMs: customStartMs, endMs: customEndMs }
+                          : pendingStartMs != null
+                            ? { startMs: pendingStartMs, endMs: pendingStartMs }
+                            : null;
+                        const inRange = range && dayMs >= range.startMs && dayMs <= range.endMs;
+                        const isStart = range && dayMs === range.startMs;
+                        const isEnd = range && dayMs === range.endMs;
+                        return (
+                          <button
+                            key={dayMs}
+                            type="button"
+                            className={`dashboard-stats__calendar-day ${inRange ? 'dashboard-stats__calendar-day--in-range' : ''} ${isStart ? 'dashboard-stats__calendar-day--start' : ''} ${isEnd ? 'dashboard-stats__calendar-day--end' : ''}`}
+                            onClick={() => {
+                              if (pendingStartMs == null) {
+                                if (dateRange === 'custom' && (customStartMs != null || customEndMs != null)) {
+                                  setDateRange('all');
+                                  setCustomStartMs(null);
+                                  setCustomEndMs(null);
+                                }
+                                setPendingStartMs(dayMs);
+                              } else {
+                                const startMs = Math.min(pendingStartMs, dayMs);
+                                const endMs = Math.max(pendingStartMs, dayMs);
+                                setCustomStartMs(startMs);
+                                setCustomEndMs(endMs);
+                                setDateRange('custom');
+                                setPendingStartMs(null);
+                                setFilterOpen(false);
+                              }
+                            }}
+                          >
+                            {date.getDate()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="dashboard-stats__filter-all-time"
+                  onClick={() => {
+                    setDateRange('all');
+                    setFilterOpen(false);
+                    setPendingStartMs(null);
+                  }}
+                >
+                  All time
+                </button>
               </div>
             )}
           </div>

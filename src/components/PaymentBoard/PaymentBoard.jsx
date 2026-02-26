@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { formatAmount } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
+import { useSettings } from '../../context/SettingsContext';
 import { Pencil, Trash2, PackageCheck, Clock, PlayCircle, CheckCircle, Eye, Inbox } from 'lucide-react';
 import './PaymentBoard.css';
 
@@ -13,8 +14,6 @@ const EMPTY_ICONS = {
   Delivered: PackageCheck,
   Paid: CheckCircle,
 };
-
-const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 function getPaidAtMs(job) {
   const t = job.paidAt;
@@ -42,16 +41,21 @@ function getStatusTimestampMs(p) {
 }
 
 export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, onEdit, onDelete }) {
+  const { settings } = useSettings();
+  const cutoffMs = settings.paidColumnCutoffDays > 0
+    ? settings.paidColumnCutoffDays * 24 * 60 * 60 * 1000
+    : 0;
+
   const byStatus = useMemo(() => {
     const map = {};
     JOB_STATUSES.forEach((s) => { map[s] = []; });
-    const oneMonthAgo = Date.now() - ONE_MONTH_MS;
+    const cutoffTime = cutoffMs > 0 ? Date.now() - cutoffMs : 0;
     payments.forEach((p) => {
       const s = p.status && map[p.status] ? p.status : 'Pending';
       if (!map[s]) map[s] = [];
-      if (s === 'Paid') {
+      if (s === 'Paid' && cutoffMs > 0) {
         const paidMs = getPaidAtMs(p);
-        if (paidMs != null && paidMs < oneMonthAgo) return;
+        if (paidMs != null && paidMs < cutoffTime) return;
       }
       map[s].push(p);
     });
@@ -59,7 +63,7 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
       (map[status] || []).sort((a, b) => getStatusTimestampMs(b) - getStatusTimestampMs(a));
     });
     return map;
-  }, [payments]);
+  }, [payments, cutoffMs]);
 
   function handleDragStart(e, job) {
     e.dataTransfer.setData(DRAG_TYPE, JSON.stringify({ id: job.id, status: job.status }));
