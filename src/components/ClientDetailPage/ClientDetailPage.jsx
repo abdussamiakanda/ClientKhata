@@ -26,7 +26,7 @@ import './ClientDetailPage.css';
 
 export function ClientDetailPage() {
   const { clientId } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
   const [paymentRecords, setPaymentRecords] = useState([]);
@@ -46,7 +46,7 @@ export function ClientDetailPage() {
   });
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading || !user?.uid) return;
     const uid = user.uid;
     const unsubClients = subscribeClients(uid, setClients);
     const unsubPayments = subscribePayments(uid, (list) => {
@@ -59,7 +59,7 @@ export function ClientDetailPage() {
       unsubPayments();
       unsubRecords();
     };
-  }, [user?.uid]);
+  }, [authLoading, user?.uid]);
 
   const client = useMemo(
     () => (clientId ? clients.find((c) => c.id === clientId) : null),

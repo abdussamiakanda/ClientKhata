@@ -54,7 +54,7 @@ const STEP_ICONS = {
 
 export function JobDetailPage() {
   const { jobId } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [payments, setPayments] = useState([]);
   const [paymentRecords, setPaymentRecords] = useState([]);
   const [clients, setClients] = useState([]);
@@ -79,7 +79,7 @@ export function JobDetailPage() {
   const [addPaymentSaving, setAddPaymentSaving] = useState(false);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading || !user?.uid) return;
     const uid = user.uid;
     const unsubPayments = subscribePayments(uid, (list) => {
       setPayments(list);
@@ -92,7 +92,7 @@ export function JobDetailPage() {
       unsubRecords();
       unsubClients();
     };
-  }, [user?.uid]);
+  }, [authLoading, user?.uid]);
 
   const job = useMemo(
     () => (jobId ? payments.find((p) => p.id === jobId) : null),

@@ -13,7 +13,7 @@ import { Banknote, Plus, Trash2, X } from 'lucide-react';
 import './PaymentsPage.css';
 
 export function PaymentsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [records, setRecords] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -25,7 +25,7 @@ export function PaymentsPage() {
   const [removeRecord, setRemoveRecord] = useState(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading || !user?.uid) return;
     const uid = user.uid;
     const unsubJobs = subscribePayments(uid, setJobs);
     const unsubRecords = subscribePaymentRecords(uid, (list) => {
@@ -36,7 +36,7 @@ export function PaymentsPage() {
       unsubJobs();
       unsubRecords();
     };
-  }, [user?.uid]);
+  }, [authLoading, user?.uid]);
 
   const totalByJob = useMemo(() => {
     const map = {};

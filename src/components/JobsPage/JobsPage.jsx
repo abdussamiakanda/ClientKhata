@@ -11,7 +11,7 @@ import { Plus } from 'lucide-react';
 import './JobsPage.css';
 
 export function JobsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [payments, setPayments] = useState([]);
   const [paymentRecords, setPaymentRecords] = useState([]);
   const [clients, setClients] = useState([]);
@@ -68,7 +68,7 @@ export function JobsPage() {
       unsubRecords();
       unsubClients();
     };
-  }, [user?.uid]);
+  }, [authLoading, user?.uid]);
 
   const totalPaidByJob = useMemo(() => {
     const map = {};

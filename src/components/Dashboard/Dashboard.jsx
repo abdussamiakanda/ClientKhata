@@ -10,7 +10,7 @@ import { Users, Briefcase, Banknote, ChevronDown } from 'lucide-react';
 import './Dashboard.css';
 
 export function Dashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
   const [records, setRecords] = useState([]);
@@ -41,7 +41,7 @@ export function Dashboard() {
   }, [filterOpen]);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading || !user?.uid) return;
     const uid = user.uid;
     const unsubC = subscribeClients(uid, (list) => {
       setClients(list);
@@ -57,7 +57,7 @@ export function Dashboard() {
       unsubP();
       unsubR();
     };
-  }, [user?.uid]);
+  }, [authLoading, user?.uid]);
 
   const dataLoaded = clientsLoaded && paymentsLoaded;
 

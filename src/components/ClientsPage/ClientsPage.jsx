@@ -9,13 +9,13 @@ import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, 
 import './ClientsPage.css';
 
 export function ClientsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading || !user?.uid) return;
     const uid = user.uid;
     const unsubClients = subscribeClients(uid, (list) => {
       setClients(list);
@@ -26,7 +26,7 @@ export function ClientsPage() {
       unsubClients();
       unsubPayments();
     };
-  }, [user?.uid]);
+  }, [authLoading, user?.uid]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
