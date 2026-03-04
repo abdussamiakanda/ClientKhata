@@ -1,22 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only these emails can read/write. Add or remove emails as needed.
-    function isAllowedUser() {
-      return request.auth != null
-        && request.auth.token.email in [
-          'abdussamiakanda@gmail.com',
-          'abdulbasirakanda@gmail.com'
-        ];
-    }
+    // Personal mode: users only see and edit their own entries (userId must match auth.uid).
     match /clients/{clientId} {
-      allow read, write: if isAllowedUser();
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     match /payments/{paymentId} {
-      allow read, write: if isAllowedUser();
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     match /payment_records/{recordId} {
-      allow read, write: if isAllowedUser();
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }

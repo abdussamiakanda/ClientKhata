@@ -80,12 +80,13 @@ export function JobDetailPage() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsubPayments = subscribePayments((list) => {
+    const uid = user.uid;
+    const unsubPayments = subscribePayments(uid, (list) => {
       setPayments(list);
       if (!loaded) setLoaded(true);
     });
-    const unsubRecords = subscribePaymentRecords(setPaymentRecords);
-    const unsubClients = subscribeClients(setClients);
+    const unsubRecords = subscribePaymentRecords(uid, setPaymentRecords);
+    const unsubClients = subscribeClients(uid, setClients);
     return () => {
       unsubPayments();
       unsubRecords();

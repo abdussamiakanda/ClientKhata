@@ -26,8 +26,9 @@ export function PaymentsPage() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsubJobs = subscribePayments(setJobs);
-    const unsubRecords = subscribePaymentRecords((list) => {
+    const uid = user.uid;
+    const unsubJobs = subscribePayments(uid, setJobs);
+    const unsubRecords = subscribePaymentRecords(uid, (list) => {
       setRecords(list);
       setLoaded(true);
     });

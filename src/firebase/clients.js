@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   query,
+  where,
   orderBy,
   onSnapshot,
   serverTimestamp,
@@ -15,13 +16,16 @@ import { createClientData } from '../schema/clientSchema';
 const CLIENTS_COLLECTION = 'clients';
 
 /**
- * Subscribe to all clients (team-wide; real-time).
+ * Subscribe to clients for the current user (personal; real-time).
+ * Only documents with userId === uid are returned.
+ * @param {string} uid - Current user id (required)
  * @param {(clients: import('../schema/clientSchema').Client[]) => void} onUpdate
  * @returns {() => void} Unsubscribe function
  */
-export function subscribeClients(onUpdate) {
+export function subscribeClients(uid, onUpdate) {
   const q = query(
     collection(db, CLIENTS_COLLECTION),
+    where('userId', '==', uid),
     orderBy('clientName')
   );
   return onSnapshot(q, (snapshot) => {

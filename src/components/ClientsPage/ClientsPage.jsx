@@ -16,11 +16,12 @@ export function ClientsPage() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsubClients = subscribeClients((list) => {
+    const uid = user.uid;
+    const unsubClients = subscribeClients(uid, (list) => {
       setClients(list);
       setClientsLoaded(true);
     });
-    const unsubPayments = subscribePayments(setPayments);
+    const unsubPayments = subscribePayments(uid, setPayments);
     return () => {
       unsubClients();
       unsubPayments();

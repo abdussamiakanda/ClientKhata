@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   query,
+  where,
   orderBy,
   onSnapshot,
   serverTimestamp,
@@ -16,13 +17,16 @@ const PAYMENT_RECORDS_COLLECTION = 'payment_records';
 const PAYMENTS_COLLECTION = 'payments';
 
 /**
- * Subscribe to all payment records (team-wide; real-time).
+ * Subscribe to payment records for the current user (personal; real-time).
+ * Only documents with userId === uid are returned.
+ * @param {string} uid - Current user id (required)
  * @param {(records: import('../schema/paymentRecordSchema').PaymentRecord[]) => void} onUpdate
  * @returns {() => void} Unsubscribe function
  */
-export function subscribePaymentRecords(onUpdate) {
+export function subscribePaymentRecords(uid, onUpdate) {
   const q = query(
     collection(db, PAYMENT_RECORDS_COLLECTION),
+    where('userId', '==', uid),
     orderBy('paidAt', 'desc')
   );
   return onSnapshot(q, (snapshot) => {

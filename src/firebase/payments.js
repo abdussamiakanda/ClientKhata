@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   query,
+  where,
   orderBy,
   onSnapshot,
   serverTimestamp,
@@ -17,13 +18,16 @@ import { createPaymentData, JOB_STATUSES, STATUS_TIMESTAMP_KEYS } from '../schem
 const PAYMENTS_COLLECTION = 'payments';
 
 /**
- * Subscribe to all payments/jobs (team-wide; real-time).
+ * Subscribe to payments/jobs for the current user (personal; real-time).
+ * Only documents with userId === uid are returned.
+ * @param {string} uid - Current user id (required)
  * @param {(payments: import('../schema/paymentSchema').PaymentEntry[]) => void} onUpdate
  * @returns {() => void} Unsubscribe function
  */
-export function subscribePayments(onUpdate) {
+export function subscribePayments(uid, onUpdate) {
   const q = query(
     collection(db, PAYMENTS_COLLECTION),
+    where('userId', '==', uid),
     orderBy('timestamp', 'desc')
   );
   return onSnapshot(q, (snapshot) => {

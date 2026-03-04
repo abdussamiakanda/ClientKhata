@@ -42,15 +42,16 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsubC = subscribeClients((list) => {
+    const uid = user.uid;
+    const unsubC = subscribeClients(uid, (list) => {
       setClients(list);
       setClientsLoaded(true);
     });
-    const unsubP = subscribePayments((list) => {
+    const unsubP = subscribePayments(uid, (list) => {
       setPayments(list);
       setPaymentsLoaded(true);
     });
-    const unsubR = subscribePaymentRecords(setRecords);
+    const unsubR = subscribePaymentRecords(uid, setRecords);
     return () => {
       unsubC();
       unsubP();
