@@ -20,7 +20,7 @@ function AppRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <PageLoader text="Loading..." />;
+    return <PageLoader text="Loading..." fullPage />;
   }
 
   return (

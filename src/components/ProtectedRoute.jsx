@@ -7,7 +7,7 @@ export function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (loading) {
-    return <PageLoader text="Loading..." />;
+    return <PageLoader text="Loading..." fullPage />;
   }
 
   if (!user) {

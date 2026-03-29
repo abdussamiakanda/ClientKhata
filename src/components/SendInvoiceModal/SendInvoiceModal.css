@@ -114,6 +114,16 @@
   font-weight: 500;
 }
 
+.send-invoice-success {
+  background-color: var(--color-success-bg, #ecfdf5);
+  color: var(--color-success, #059669);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .send-invoice-desc {
   margin-top: 0;
   margin-bottom: 1rem;
