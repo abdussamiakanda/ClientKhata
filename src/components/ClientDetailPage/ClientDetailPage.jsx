@@ -7,6 +7,7 @@ import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { ClientForm } from '../ClientForm';
 import { PaymentForm } from '../PaymentForm';
 import { ConfirmModal } from '../ConfirmModal';
+import { SendInvoiceModal } from '../SendInvoiceModal/SendInvoiceModal';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
 import {
   ArrowLeft,
@@ -21,6 +22,7 @@ import {
   Briefcase,
   Plus,
   Eye,
+  Send,
 } from 'lucide-react';
 import './ClientDetailPage.css';
 
@@ -35,6 +37,7 @@ export function ClientDetailPage() {
   const [editingClient, setEditingClient] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
+  const [sendInvoiceModalOpen, setSendInvoiceModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: '',
@@ -291,10 +294,18 @@ export function ClientDetailPage() {
                 <Briefcase size={20} />
                 Jobs
               </h2>
-              <button type="button" className="btn btn-primary" onClick={handleAddJob}>
-                <Plus size={18} />
-                Add Job
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {clientJobs.length > 0 && (
+                  <button type="button" className="btn btn-secondary" onClick={() => setSendInvoiceModalOpen(true)}>
+                    <Send size={18} />
+                    Send Invoices
+                  </button>
+                )}
+                <button type="button" className="btn btn-primary" onClick={handleAddJob}>
+                  <Plus size={18} />
+                  Add Job
+                </button>
+              </div>
             </div>
             <div className="client-detail-jobs">
               {clientJobs.length === 0 ? (
@@ -362,6 +373,15 @@ export function ClientDetailPage() {
           defaultClientId={client?.id}
           fixedClientId={editingPayment ? undefined : client?.id}
           onClose={handleClosePaymentForm}
+        />
+      )}
+
+      {sendInvoiceModalOpen && client && (
+        <SendInvoiceModal
+          client={client}
+          jobs={clientJobs}
+          totalPaidByJob={totalPaidByJob}
+          onClose={() => setSendInvoiceModalOpen(false)}
         />
       )}
 
