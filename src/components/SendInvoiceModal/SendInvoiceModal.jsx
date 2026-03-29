@@ -13,6 +13,7 @@ export function SendInvoiceModal({
   const [selectedJobIds, setSelectedJobIds] = useState(new Set());
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
+  const [customMessage, setCustomMessage] = useState("Thank you for your business!");
   const { profile } = useAuth();
 
   const jobs = useMemo(
@@ -178,7 +179,7 @@ export function SendInvoiceModal({
           </table>
           
           <div style="margin-top: 4rem; text-align: center; color: #64748b; font-size: 0.9375rem; border-top: 1px solid #e2e8f0; padding-top: 2rem; position: relative; z-index: 10;">
-            <p style="margin: 0 0 1.5rem 0; font-size: 1rem; color: #334155;">Thank you for your business!</p>
+            <p style="margin: 0 0 1.5rem 0; font-size: 1rem; color: #334155;">${customMessage.replace(/\n/g, '<br/>')}</p>
             <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px;">
               <p style="margin: 0 0 0.5rem 0; font-size: 0.8125rem; color: #64748b;">
                 This invoice was generated securely by <strong>ClientKhata</strong>.
@@ -285,6 +286,16 @@ export function SendInvoiceModal({
                 </div>
               </label>
             ))}
+          </div>
+
+          <div className="send-invoice-form-group">
+            <label className="send-invoice-label">Custom Message</label>
+            <textarea
+              className="form-input send-invoice-textarea"
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              placeholder="Enter a custom message... (Default: Thank you for your business!)"
+            />
           </div>
         </div>
         <div className="send-invoice-footer">

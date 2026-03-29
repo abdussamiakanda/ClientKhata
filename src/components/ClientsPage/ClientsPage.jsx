@@ -6,6 +6,7 @@ import { subscribePayments } from '../../firebase/payments';
 import { ClientForm } from '../ClientForm';
 import { ConfirmModal } from '../ConfirmModal';
 import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Eye } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './ClientsPage.css';
 
 export function ClientsPage() {
@@ -118,10 +119,7 @@ export function ClientsPage() {
 
       <div className="page-content">
         {!clientsLoaded ? (
-          <div className="page-loading">
-            <span className="page-loading__spinner" aria-hidden="true" />
-            <span className="page-loading__text">Loading clients…</span>
-          </div>
+          <PageLoader text="Loading clients..." />
         ) : clients.length === 0 ? (
           <div className="clients-empty">
             <p>No clients yet. Add your first client to get started.</p>

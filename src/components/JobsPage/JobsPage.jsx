@@ -8,6 +8,7 @@ import { PaymentTable } from '../PaymentTable';
 import { PaymentBoard } from '../PaymentBoard';
 import { ConfirmModal } from '../ConfirmModal';
 import { Plus } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './JobsPage.css';
 
 export function JobsPage() {
@@ -156,10 +157,7 @@ export function JobsPage() {
 
       <div className="page-content">
         {!paymentsLoaded ? (
-          <div className="page-loading">
-            <span className="page-loading__spinner" aria-hidden="true" />
-            <span className="page-loading__text">Loading jobs…</span>
-          </div>
+          <PageLoader text="Loading jobs..." />
         ) : (
           <>
             {view === 'board' ? (

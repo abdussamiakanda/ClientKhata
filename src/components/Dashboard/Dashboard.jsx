@@ -7,6 +7,7 @@ import { subscribeClients } from '../../firebase/clients';
 import { formatAmount } from '../../utils/format';
 import { getJobTimestampMs, getRangeBounds, getCalendarDays, formatRangeLabel } from '../../utils/dateRange';
 import { Users, Briefcase, Banknote, ChevronDown } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './Dashboard.css';
 
 export function Dashboard() {
@@ -142,10 +143,7 @@ export function Dashboard() {
       </div>
 
       {!dataLoaded ? (
-        <div className="page-loading">
-          <span className="page-loading__spinner" aria-hidden="true" />
-          <span className="page-loading__text">Loading…</span>
-        </div>
+        <PageLoader />
       ) : (
         <>
       <section className="dashboard-stats" aria-label="Overview statistics">

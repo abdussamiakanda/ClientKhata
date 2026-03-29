@@ -194,3 +194,25 @@
 .send-invoice-footer .btn + .btn {
   margin-left: 0;
 }
+
+.send-invoice-form-group {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.send-invoice-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.send-invoice-textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+}

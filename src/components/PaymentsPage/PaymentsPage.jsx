@@ -10,6 +10,7 @@ import { formatAmount, formatTimestamp } from '../../utils/format';
 import { getStatusBadgeClass } from '../../utils/format';
 import { ConfirmModal } from '../ConfirmModal';
 import { Banknote, Plus, Trash2, X } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './PaymentsPage.css';
 
 export function PaymentsPage() {
@@ -167,10 +168,7 @@ export function PaymentsPage() {
 
       <div className="page-content">
         {!loaded ? (
-          <div className="page-loading">
-            <span className="page-loading__spinner" aria-hidden="true" />
-            <span className="page-loading__text">Loading…</span>
-          </div>
+          <PageLoader />
         ) : jobs.length === 0 ? (
           <div className="payments-empty">
             <Banknote size={48} className="payments-empty__icon" aria-hidden="true" />

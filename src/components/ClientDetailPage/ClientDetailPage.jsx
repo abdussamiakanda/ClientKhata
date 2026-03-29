@@ -24,6 +24,7 @@ import {
   Eye,
   Send,
 } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './ClientDetailPage.css';
 
 export function ClientDetailPage() {
@@ -194,10 +195,7 @@ export function ClientDetailPage() {
       </div>
 
       {!client ? (
-        <div className="page-loading">
-          <span className="page-loading__spinner" aria-hidden="true" />
-          <span className="page-loading__text">Loading…</span>
-        </div>
+        <PageLoader />
       ) : (
         <>
           {/* Client info card */}

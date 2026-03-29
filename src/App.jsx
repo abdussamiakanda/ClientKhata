@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { PageLoader } from './components/PageLoader/PageLoader';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { Login } from './components/Auth';
@@ -19,11 +20,7 @@ function AppRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="auth-loading">
-        <p>Loading…</p>
-      </div>
-    );
+    return <PageLoader text="Loading..." />;
   }
 
   return (

@@ -7,6 +7,7 @@ import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
 import { formatAmount } from '../../utils/format';
 import { ArrowLeft, Printer, Link as LinkIcon, Check } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './JobInvoicePage.css';
 
 export function JobInvoicePage() {
@@ -96,8 +97,7 @@ export function JobInvoicePage() {
   if (loading || generating) {
     return (
       <div className="invoice-page invoice-loading">
-        <span className="page-loading__spinner" aria-hidden="true" />
-        <span className="page-loading__text">{generating ? 'Generating Public Invoice...' : 'Loading Invoice...'}</span>
+        <PageLoader text={generating ? 'Generating Public Invoice...' : 'Loading Invoice...'} />
       </div>
     );
   }

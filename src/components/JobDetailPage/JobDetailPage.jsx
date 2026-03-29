@@ -10,6 +10,7 @@ import { ConfirmModal } from '../ConfirmModal';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText, CalendarPlus, PlayCircle, PackageCheck, CheckCircle, Plus, X } from 'lucide-react';
+import { PageLoader } from '../PageLoader/PageLoader';
 import './JobDetailPage.css';
 
 const STATUS_LABELS = {
@@ -317,10 +318,7 @@ export function JobDetailPage() {
       </div>
 
       {!job ? (
-        <div className="page-loading">
-          <span className="page-loading__spinner" aria-hidden="true" />
-          <span className="page-loading__text">Loading…</span>
-        </div>
+        <PageLoader />
       ) : (
         <>
           <section className="job-detail-card" aria-label="Job information">
