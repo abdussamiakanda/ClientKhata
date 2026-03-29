@@ -176,10 +176,6 @@ export function JobInvoicePage() {
           </div>
           <div className="invoice-header-meta">
             <div className="invoice-meta-item">
-              <span className="meta-label">Invoice No:</span>
-              <span className="meta-value">{invoice.invoiceNumber}</span>
-            </div>
-            <div className="invoice-meta-item">
               <span className="meta-label">Date:</span>
               <span className="meta-value">{formattedDate}</span>
             </div>

@@ -13,7 +13,7 @@
   padding: 1rem 1.25rem;
   border-radius: 16px;
   border: 1px solid rgba(var(--color-border, 226, 232, 240), 0.5);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   position: sticky;
   top: 1.5rem;
   z-index: 50;
@@ -24,7 +24,7 @@
   color: #000000;
   padding: 4.5rem;
   border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
   position: relative;
   overflow: hidden;
   font-family: inherit;
@@ -92,7 +92,6 @@
 
 .invoice-meta-item .meta-value {
   font-weight: 500;
-  width: 120px;
   text-align: left;
 }
 
@@ -152,7 +151,8 @@
   vertical-align: top;
 }
 
-.th-amount, .td-amount {
+.th-amount,
+.td-amount {
   text-align: right;
   width: 30%;
   font-weight: 600;
@@ -212,7 +212,8 @@
   transform: translate(-50%, -50%) rotate(-15deg);
   font-size: 4rem;
   font-weight: 900;
-  color: rgba(16, 185, 129, 0.15); /* Faint green */
+  color: rgba(16, 185, 129, 0.15);
+  /* Faint green */
   border: 8px solid rgba(16, 185, 129, 0.15);
   padding: 1rem 2rem;
   border-radius: 16px;
@@ -231,7 +232,8 @@
 }
 
 /* Loading state */
-.invoice-loading, .invoice-not-found {
+.invoice-loading,
+.invoice-not-found {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -242,38 +244,128 @@
 
 /* Print CSS */
 @media print {
+
   /* Hide UI elements not meant for print */
   .no-print {
     display: none !important;
   }
-  
+
   /* Make sure container doesn't have shadows or rounded corners */
   .invoice-wrapper {
     padding: 0;
     max-width: 100%;
   }
-  
+
   .invoice-container {
     box-shadow: none;
     padding: 0;
     border-radius: 0;
   }
-  
+
   /* Force dark text and exact colors for print */
   body {
     background-color: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  
+
   .invoice-table th {
-    background-color: #f1f5f9 !important; /* Ensure a light gray fallback is printed */
+    background-color: #f1f5f9 !important;
+    /* Ensure a light gray fallback is printed */
   }
-  
+
   /* Avoid page breaks inside important sections */
-  .invoice-bill-to, 
-  .invoice-items, 
+  .invoice-bill-to,
+  .invoice-items,
   .invoice-summary {
     page-break-inside: avoid;
+  }
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .invoice-wrapper {
+    padding: 1rem;
+  }
+
+  .invoice-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem;
+    position: static; /* Remove sticky on mobile to save screen space */
+  }
+  
+  .invoice-toolbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .invoice-toolbar > div {
+    display: flex;
+    width: 100%;
+    gap: 0.75rem !important; /* Override inline gap if necessary */
+  }
+
+  .invoice-toolbar > div:empty {
+    display: none; /* Hide the guest spacer */
+  }
+
+  .invoice-toolbar > div .btn {
+    flex: 1;
+  }
+
+  .invoice-container {
+    padding: 1.5rem;
+  }
+
+  .invoice-header {
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .invoice-title {
+    font-size: 2rem;
+  }
+
+  .invoice-meta-item {
+    justify-content: flex-start;
+  }
+
+  .invoice-meta-item .meta-label {
+    text-align: left;
+    margin-right: 0.5rem;
+    width: auto;
+  }
+
+  .invoice-table th, 
+  .invoice-table td {
+    padding: 1rem 0.5rem;
+  }
+
+  .th-amount, 
+  .td-amount {
+    width: auto;
+  }
+
+  .td-desc strong {
+    font-size: 1rem;
+  }
+
+  .invoice-summary {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .invoice-stamp {
+    font-size: 2.5rem;
+    padding: 0.5rem 1rem;
+    border-width: 4px;
+    top: 50%;
+  }
+
+  .invoice-footer {
+    margin-top: 2rem;
   }
 }
