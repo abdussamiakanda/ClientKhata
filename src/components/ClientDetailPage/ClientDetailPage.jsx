@@ -42,7 +42,7 @@ export function ClientDetailPage() {
     confirmLabel: 'OK',
     cancelLabel: null,
     variant: 'primary',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export function ClientDetailPage() {
       confirmLabel: opts.confirmLabel ?? 'Confirm',
       cancelLabel: opts.cancelLabel ?? 'Cancel',
       variant: opts.variant ?? 'primary',
-      onConfirm: opts.onConfirm ?? (() => {}),
+      onConfirm: opts.onConfirm ?? (() => { }),
     });
 
   const handleEditClient = () => {
@@ -325,13 +325,20 @@ export function ClientDetailPage() {
                           <Eye size={14} />
                           View
                         </Link>
+                        <Link
+                          to={`/invoice/${job.id}`}
+                          className="btn btn-small btn-secondary"
+                          aria-label="View invoice"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <FileText size={14} />
+                        </Link>
                         <button type="button" className="btn btn-small btn-secondary" onClick={() => handleEditJob(job)} aria-label="Edit job">
                           <Pencil size={14} />
-                          Edit
                         </button>
                         <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeleteJob(job)} aria-label="Delete job">
                           <Trash2 size={14} />
-                          Delete
                         </button>
                       </div>
                     </li>
