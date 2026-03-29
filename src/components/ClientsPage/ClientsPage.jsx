@@ -5,7 +5,7 @@ import { subscribeClients, deleteClient } from '../../firebase/clients';
 import { subscribePayments } from '../../firebase/payments';
 import { ClientForm } from '../ClientForm';
 import { ConfirmModal } from '../ConfirmModal';
-import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Info } from 'lucide-react';
+import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Eye } from 'lucide-react';
 import './ClientsPage.css';
 
 export function ClientsPage() {
@@ -195,10 +195,10 @@ export function ClientsPage() {
                 <div className="client-card__footer">
                   <Link
                     to={`/client/${client.id}`}
-                    className="btn btn-small btn-secondary"
+                    className="btn btn-small btn-secondary client-card__btn-details"
                     aria-label="View details"
                   >
-                    <Info size={14} />
+                    <Eye size={14} />
                     Details
                   </Link>
                   <button

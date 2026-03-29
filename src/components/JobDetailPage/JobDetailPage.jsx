@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { subscribePayments, deletePayment, updatePayment, updatePaymentTimestamps } from '../../firebase/payments';
 import { subscribePaymentRecords, addPaymentRecord, deletePaymentRecord } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
+import { syncInvoiceData } from '../../firebase/invoices';
 import { PaymentForm } from '../PaymentForm';
 import { ConfirmModal } from '../ConfirmModal';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
@@ -54,11 +55,11 @@ const STEP_ICONS = {
 
 export function JobDetailPage() {
   const { jobId } = useParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [payments, setPayments] = useState([]);
   const [paymentRecords, setPaymentRecords] = useState([]);
   const [clients, setClients] = useState([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState({ p: false, c: false, r: false });
   const [formOpen, setFormOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [confirmModal, setConfirmModal] = useState({
@@ -83,10 +84,16 @@ export function JobDetailPage() {
     const uid = user.uid;
     const unsubPayments = subscribePayments(uid, (list) => {
       setPayments(list);
-      if (!loaded) setLoaded(true);
+      setLoaded(prev => ({ ...prev, p: true }));
     });
-    const unsubRecords = subscribePaymentRecords(uid, setPaymentRecords);
-    const unsubClients = subscribeClients(uid, setClients);
+    const unsubRecords = subscribePaymentRecords(uid, (list) => {
+      setPaymentRecords(list);
+      setLoaded(prev => ({ ...prev, r: true }));
+    });
+    const unsubClients = subscribeClients(uid, (list) => {
+      setClients(list);
+      setLoaded(prev => ({ ...prev, c: true }));
+    });
     return () => {
       unsubPayments();
       unsubRecords();
@@ -94,10 +101,24 @@ export function JobDetailPage() {
     };
   }, [authLoading, user?.uid]);
 
+  const isFullyLoaded = loaded.p && loaded.c && loaded.r;
+
   const job = useMemo(
     () => (jobId ? payments.find((p) => p.id === jobId) : null),
     [payments, jobId]
   );
+
+  const client = useMemo(
+    () => (job?.clientId ? clients.find((c) => c.id === job.clientId) : null),
+    [job, clients]
+  );
+
+  useEffect(() => {
+    if (isFullyLoaded && job && user?.uid) {
+      const records = paymentRecords.filter((r) => r.jobId === jobId);
+      syncInvoiceData(jobId, user.uid, user.displayName, job, client, records, profile).catch(console.error);
+    }
+  }, [isFullyLoaded, job, client, paymentRecords, user?.uid, jobId, user?.displayName, profile]);
 
   const totalPaid = useMemo(() => {
     if (!jobId) return 0;
@@ -269,7 +290,7 @@ export function JobDetailPage() {
     });
   };
 
-  if (loaded && !job && jobId) {
+  if (isFullyLoaded && !job && jobId) {
     return (
       <div className="page job-detail-page">
         <div className="page-header">
@@ -311,6 +332,10 @@ export function JobDetailPage() {
                 </span>
               </div>
               <div className="job-detail-card__actions">
+                <Link to={`/invoice/${job.id}`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+                  <FileText size={16} />
+                  Invoice
+                </Link>
                 <button type="button" className="btn btn-primary" onClick={handleEdit}>
                   <Pencil size={16} />
                   Edit

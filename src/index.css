@@ -70,7 +70,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: opacity 0.2s, background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn > svg {
@@ -78,7 +78,13 @@ body {
 }
 
 .btn:hover {
-  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -95,9 +101,18 @@ body {
   color: var(--color-text);
 }
 
+.btn-secondary:hover {
+  background: var(--color-text-muted);
+  color: var(--color-surface);
+}
+
 .btn-danger {
   background: var(--color-error);
   color: #fff;
+}
+
+.btn-danger:hover {
+  filter: brightness(0.85);
 }
 
 .btn-small {

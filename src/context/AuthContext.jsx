@@ -1,22 +1,39 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import { subscribeUserProfile } from '../firebase/profile';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    let unsubProfile = null;
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      setLoading(false);
+      if (firebaseUser?.uid) {
+        if (unsubProfile) unsubProfile();
+        unsubProfile = subscribeUserProfile(firebaseUser.uid, (data) => {
+          setProfile(data);
+          setLoading(false);
+        });
+      } else {
+        setProfile(null);
+        setLoading(false);
+        if (unsubProfile) unsubProfile();
+      }
     });
-    return unsubscribe;
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubProfile) unsubProfile();
+    };
   }, []);
 
-  const value = { user, loading };
+  const value = { user, profile, loading };
 
   return (
     <AuthContext.Provider value={value}>

@@ -4,7 +4,7 @@ import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { getJobTimestampMs, getRangeBounds } from '../../utils/dateRange';
 import { DateRangeFilter } from '../DateRangeFilter';
-import { Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { Search, Pencil, Trash2, Eye, FileText } from 'lucide-react';
 import './PaymentTable.css';
 
 /** Same field as shown in Status column: pendingAt / ongoingAt / deliveredAt / paidAt. Fallback to timestamp. */
@@ -167,7 +167,15 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
                       aria-label="View"
                     >
                       <Eye size={14} />
-                      View
+                    </Link>
+                    <Link
+                      to={`/invoice/${payment.id}`}
+                      className="btn btn-small btn-secondary btn-icon"
+                      aria-label="Invoice"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <FileText size={14} />
                     </Link>
                     <button
                       type="button"

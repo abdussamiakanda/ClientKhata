@@ -11,6 +11,7 @@ import { ClientsPage } from './components/ClientsPage';
 import { ClientDetailPage } from './components/ClientDetailPage';
 import { JobsPage } from './components/JobsPage';
 import { JobDetailPage } from './components/JobDetailPage';
+import { JobInvoicePage } from './components/JobInvoicePage';
 import { PaymentsPage } from './components/PaymentsPage/PaymentsPage';
 import { Settings } from './components/Settings';
 
@@ -31,6 +32,7 @@ function AppRoutes() {
       <Route path="/signup" element={<Navigate to="/login" replace />} />
       <Route path="/" element={<Outlet />}>
         <Route index element={<LandingPage />} />
+        <Route path="invoice/:jobId" element={<JobInvoicePage />} />
         <Route
           path="*"
           element={

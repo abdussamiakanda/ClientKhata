@@ -136,6 +136,16 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.board-card>*:not(.board-card-actions) {
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.board-card:hover>*:not(.board-card-actions),
+.board-card:focus-within>*:not(.board-card-actions) {
+  filter: blur(0.5px);
+  opacity: 0.4;
+}
+
 .board-card-client {
   font-weight: 600;
   font-size: 0.875rem;
@@ -165,8 +175,8 @@
   top: 0.5rem;
   right: 0.5rem;
   left: auto;
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.25rem;
   opacity: 0;
   transition: opacity 0.15s;
@@ -180,7 +190,8 @@
   pointer-events: auto;
 }
 
-@media (max-width: 600px), (hover: none) {
+@media (max-width: 600px),
+(hover: none) {
   .board-card-actions {
     opacity: 1;
     pointer-events: auto;

@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
-import { ArrowLeft, Sun, Moon, Palette, LayoutGrid } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { saveUserProfile } from '../../firebase/profile';
+import { ArrowLeft, Sun, Moon, Palette, LayoutGrid, Building2, CheckCircle2 } from 'lucide-react';
 import './Settings.css';
 
 const PAID_COLUMN_OPTIONS = [
@@ -18,6 +21,43 @@ const PAID_COLUMN_OPTIONS = [
 export function Settings() {
   const { theme, setTheme } = useTheme();
   const { settings, setPaidColumnCutoffDays } = useSettings();
+  const { user, profile } = useAuth();
+
+  const [profileForm, setProfileForm] = useState({
+    businessName: '',
+    phone: '',
+    email: '',
+    address: '',
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        businessName: profile.businessName || '',
+        phone: profile.phone || '',
+        email: profile.email || '',
+        address: profile.address || '',
+      });
+    }
+  }, [profile]);
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    setSavingProfile(true);
+    setProfileSuccess('');
+    try {
+      await saveUserProfile(user.uid, profileForm);
+      setProfileSuccess('Profile saved successfully!');
+      setTimeout(() => setProfileSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   return (
     <div className="page settings-page">
@@ -90,6 +130,71 @@ export function Settings() {
             ))}
           </select>
         </div>
+      </section>
+
+      <section className="settings-card" aria-labelledby="settings-profile-title">
+        <h2 id="settings-profile-title" className="settings-card__title">
+          <Building2 size={20} aria-hidden />
+          Business Profile
+        </h2>
+        <form className="settings-card__body settings-card__body--form" onSubmit={handleProfileSubmit}>
+          <div className="settings-form-grid">
+            <div className="settings-form-group">
+              <label htmlFor="pf-name" className="settings-card__label">Business / Your Name</label>
+              <input
+                id="pf-name"
+                className="input"
+                value={profileForm.businessName}
+                onChange={(e) => setProfileForm(p => ({ ...p, businessName: e.target.value }))}
+                placeholder="e.g. Acme Innovations"
+              />
+            </div>
+            <div className="settings-form-group">
+              <label htmlFor="pf-email" className="settings-card__label">Email Address</label>
+              <input
+                id="pf-email"
+                type="email"
+                className="input"
+                value={profileForm.email}
+                onChange={(e) => setProfileForm(p => ({ ...p, email: e.target.value }))}
+                placeholder="e.g. hello@example.com"
+              />
+            </div>
+            <div className="settings-form-group">
+              <label htmlFor="pf-phone" className="settings-card__label">Phone Number</label>
+              <input
+                id="pf-phone"
+                className="input"
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                placeholder="e.g. +1 234 567 890"
+              />
+            </div>
+            <div className="settings-form-group full-width">
+              <label htmlFor="pf-address" className="settings-card__label">Full Address</label>
+              <textarea
+                id="pf-address"
+                className="input"
+                rows="3"
+                value={profileForm.address}
+                onChange={(e) => setProfileForm(p => ({ ...p, address: e.target.value }))}
+                placeholder="e.g. 123 Main St, City, Country"
+              />
+            </div>
+          </div>
+          
+          <div className="settings-form-actions">
+            <button type="submit" className="btn-premium" disabled={savingProfile}>
+              {savingProfile ? 'Saving...' : 'Save Profile'}
+            </button>
+            {profileSuccess && (
+              <span className="profile-success-msg">
+                <CheckCircle2 size={16} />
+                {profileSuccess}
+              </span>
+            )}
+          </div>
+        </form>
       </section>
     </div>
   );

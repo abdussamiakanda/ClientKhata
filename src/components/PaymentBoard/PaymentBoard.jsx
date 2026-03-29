@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { formatAmount } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { useSettings } from '../../context/SettingsContext';
-import { Pencil, Trash2, PackageCheck, Clock, PlayCircle, CheckCircle, Eye, Inbox } from 'lucide-react';
+import { Pencil, Trash2, PackageCheck, Clock, PlayCircle, CheckCircle, Eye, Inbox, FileText } from 'lucide-react';
 import './PaymentBoard.css';
 
 const DRAG_TYPE = 'application/x-board-job';
@@ -149,6 +149,16 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                         aria-label="View"
                       >
                         <Eye size={16} />
+                      </Link>
+                      <Link
+                        to={`/invoice/${job.id}`}
+                        className="board-card-action btn btn-icon"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label="Invoice"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FileText size={16} />
                       </Link>
                       <button
                         type="button"
