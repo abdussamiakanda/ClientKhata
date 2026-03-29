@@ -1,26 +1,34 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Send, Mail } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { formatAmount } from '../../utils/format';
-import './SendInvoiceModal.css';
+import { useState, useEffect, useMemo } from "react";
+import { X, Send, Mail } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { formatAmount } from "../../utils/format";
+import "./SendInvoiceModal.css";
 
-export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {}, onClose }) {
+export function SendInvoiceModal({
+  client,
+  jobs: initialJobs,
+  totalPaidByJob = {},
+  onClose,
+}) {
   const [selectedJobIds, setSelectedJobIds] = useState(new Set());
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
   const { profile } = useAuth();
 
-  const jobs = useMemo(() => (initialJobs || []).filter(j => j.status !== 'Paid'), [initialJobs]);
+  const jobs = useMemo(
+    () => (initialJobs || []).filter((j) => j.status !== "Paid"),
+    [initialJobs],
+  );
 
   useEffect(() => {
     // Select all by default if there are jobs
     if (jobs && jobs.length > 0) {
-      setSelectedJobIds(new Set(jobs.map(j => j.id)));
+      setSelectedJobIds(new Set(jobs.map((j) => j.id)));
     }
   }, [jobs]);
 
   function toggleJob(id) {
-    setSelectedJobIds(prev => {
+    setSelectedJobIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -35,7 +43,7 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
     if (selectedJobIds.size === jobs.length) {
       setSelectedJobIds(new Set());
     } else {
-      setSelectedJobIds(new Set(jobs.map(j => j.id)));
+      setSelectedJobIds(new Set(jobs.map((j) => j.id)));
     }
   }
 
@@ -51,18 +59,22 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
     setIsSending(true);
     setError(null);
 
-    const selectedJobs = jobs.filter(j => selectedJobIds.has(j.id));
-    const subject = `Invoice${selectedJobs.length > 1 ? 's' : ''} from ${profile?.businessName || 'Us'}`;
-    const currency = selectedJobs[0]?.currency ?? 'BDT';
+    const selectedJobs = jobs.filter((j) => selectedJobIds.has(j.id));
+    const subject = `Invoice${selectedJobs.length > 1 ? "s" : ""} from ${profile?.businessName || "Us"}`;
+    const currency = selectedJobs[0]?.currency ?? "BDT";
 
-    const formattedDate = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    const formattedDate = new Date().toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
     let subtotal = 0;
     let totalPaid = 0;
-    let itemsHtml = '';
+    let itemsHtml = "";
 
-    selectedJobs.forEach(job => {
-      const desc = job.workDescription || 'Job';
+    selectedJobs.forEach((job) => {
+      const desc = job.workDescription || "Job";
       const amountStr = formatAmount(job.amount, currency);
       const indUrl = `${window.location.origin}/invoice/${job.id}`;
       itemsHtml += `
@@ -84,27 +96,31 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
     const balanceDue = Math.max(0, subtotal - totalPaid);
     const isPaidInFull = balanceDue === 0;
 
-    const jobIdsStr = selectedJobs.map(j => j.id).join(',');
+    const jobIdsStr = selectedJobs.map((j) => j.id).join(",");
     const url = `${window.location.origin}/invoice/${jobIdsStr}`;
 
     const htmlBody = `
       <div style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; padding: 40px 10px;">
         <div style="max-width: 800px; margin: 0 auto; background: #ffffff; padding: 4.5rem; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.02); position: relative; overflow: hidden; color: #000000;">
           
-          ${isPaidInFull ? `
+          ${
+            isPaidInFull
+              ? `
           <div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); font-size: 4rem; font-weight: 900; color: rgba(16, 185, 129, 0.15); border: 8px solid rgba(16, 185, 129, 0.15); padding: 1rem 2rem; border-radius: 16px; text-transform: uppercase; letter-spacing: 4px; pointer-events: none; z-index: 0;">
             PAID IN FULL
-          </div>` : ''}
+          </div>`
+              : ""
+          }
 
           <table style="width: 100%; margin-bottom: 3.5rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 2rem; position: relative; z-index: 10;">
             <tr>
               <td style="vertical-align: top;">
                 <h1 style="font-size: 2.75rem; font-weight: 900; margin: 0 0 0.5rem; color: #0d9488; letter-spacing: 3px;">INVOICE</h1>
                 <div style="margin-top: 0.25rem;">
-                  <p style="font-size: 1.125rem; color: #64748b; margin: 0 0 0.25rem 0; font-weight: 700;">${profile?.businessName || 'Your Business'}</p>
-                  ${profile?.address ? `<p style="font-size: 0.9375rem; color: #64748b; margin: 0 0 0.15rem 0; font-weight: 500; white-space: pre-wrap;">${profile.address}</p>` : ''}
-                  ${profile?.phone ? `<p style="font-size: 0.9375rem; color: #64748b; margin: 0 0 0.15rem 0; font-weight: 500;">${profile.phone}</p>` : ''}
-                  ${profile?.email ? `<p style="font-size: 0.9375rem; color: #64748b; margin: 0 0 0.15rem 0; font-weight: 500;">${profile.email}</p>` : ''}
+                  <p style="font-size: 1.125rem; color: #64748b; margin: 0 0 0.25rem 0; font-weight: 700;">${profile?.businessName || "Your Business"}</p>
+                  ${profile?.address ? `<p style="font-size: 0.9375rem; color: #64748b; margin: 0 0 0.15rem 0; font-weight: 500; white-space: pre-wrap;">${profile.address}</p>` : ""}
+                  ${profile?.phone ? `<p style="font-size: 0.9375rem; color: #64748b; margin: 0 0 0.15rem 0; font-weight: 500;">${profile.phone}</p>` : ""}
+                  ${profile?.email ? `<p style="font-size: 0.9375rem; color: #64748b; margin: 0 0 0.15rem 0; font-weight: 500;">${profile.email}</p>` : ""}
                 </div>
               </td>
               <td style="vertical-align: top; text-align: right;">
@@ -120,10 +136,10 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
             <h2 style="font-size: 1rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin: 0 0 1rem 0;">Bill To:</h2>
             <div>
               <p style="font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem 0;">${client.clientName}</p>
-              ${client.institution ? `<p style="font-weight: 600; color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.institution}</p>` : ''}
-              ${client.address ? `<p style="color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.address}</p>` : ''}
-              ${client.contactNumber ? `<p style="color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.contactNumber}</p>` : ''}
-              ${client.email ? `<p style="color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.email}</p>` : ''}
+              ${client.institution ? `<p style="font-weight: 600; color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.institution}</p>` : ""}
+              ${client.address ? `<p style="color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.address}</p>` : ""}
+              ${client.contactNumber ? `<p style="color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.contactNumber}</p>` : ""}
+              ${client.email ? `<p style="color: #475569; margin: 0 0 0.25rem 0; font-size: 1rem;">${client.email}</p>` : ""}
             </div>
           </div>
           
@@ -170,7 +186,7 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
               <p style="margin: 0; font-size: 0.75rem;">
                 <a href="${window.location.origin}" style="color: #94a3b8; text-decoration: underline;">ClientKhata</a>
                 <span style="color: #cbd5e1; margin: 0 8px;">|</span>
-                <a href="mailto:${profile?.email || 'stop'}?subject=Unsubscribe%20Request" style="color: #94a3b8; text-decoration: underline;">Unsubscribe</a>
+                <a href="mailto:${profile?.email || "stop"}?subject=Unsubscribe%20Request" style="color: #94a3b8; text-decoration: underline;">Unsubscribe</a>
               </p>
             </div>
           </div>
@@ -184,14 +200,14 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_EMAIL_API_KEY
+          "x-api-key": import.meta.env.VITE_EMAIL_API_KEY,
         },
         body: JSON.stringify({
           to: client.email,
           from: profile?.businessName || "Sami",
           subject: subject,
-          message: htmlBody
-        })
+          message: htmlBody,
+        }),
       });
 
       if (!response.ok) {
@@ -209,28 +225,36 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
 
   return (
     <div className="send-invoice-overlay" onClick={onClose} role="presentation">
-      <div className="send-invoice-content" onClick={e => e.stopPropagation()} role="dialog">
+      <div
+        className="send-invoice-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+      >
         <div className="send-invoice-header">
           <h2 className="modal-title">
             <Mail size={20} className="modal-title-icon" />
             Send Invoices
           </h2>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
             <X size={20} />
           </button>
         </div>
         <div className="send-invoice-body">
-          {error && (
-            <div className="send-invoice-warning">
-              {error}
-            </div>
-          )}
+          {error && <div className="send-invoice-warning">{error}</div>}
           {!client.email && !error && (
             <div className="send-invoice-warning">
-              This client has no email address set. You must add one before sending.
+              This client has no email address set. You must add one before
+              sending.
             </div>
           )}
-          <p className="send-invoice-desc">Select the jobs you want to include in the email.</p>
+          <p className="send-invoice-desc">
+            Select the jobs you want to include in the email.
+          </p>
 
           <div className="send-invoice-list">
             <label className="send-invoice-item send-invoice-item--all">
@@ -243,7 +267,7 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
               <span>Select All</span>
             </label>
 
-            {jobs.map(job => (
+            {jobs.map((job) => (
               <label key={job.id} className="send-invoice-item">
                 <input
                   type="checkbox"
@@ -252,15 +276,24 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
                   onChange={() => toggleJob(job.id)}
                 />
                 <div className="send-invoice-item__info">
-                  <span className="send-invoice-item__desc">{job.workDescription || 'Unnamed Job'}</span>
-                  <span className="send-invoice-item__amount">{formatAmount(job.amount, job.currency ?? 'BDT')}</span>
+                  <span className="send-invoice-item__desc">
+                    {job.workDescription || "Unnamed Job"}
+                  </span>
+                  <span className="send-invoice-item__amount">
+                    {formatAmount(job.amount, job.currency ?? "BDT")}
+                  </span>
                 </div>
               </label>
             ))}
           </div>
         </div>
         <div className="send-invoice-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSending}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onClose}
+            disabled={isSending}
+          >
             Cancel
           </button>
           <button
@@ -270,7 +303,7 @@ export function SendInvoiceModal({ client, jobs: initialJobs, totalPaidByJob = {
             onClick={handleSendEmail}
           >
             <Send size={16} />
-            {isSending ? 'Sending...' : 'Send HTML Invoice'}
+            {isSending ? "Sending..." : "Send Invoice"}
           </button>
         </div>
       </div>
