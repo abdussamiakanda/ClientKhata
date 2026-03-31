@@ -54,7 +54,7 @@ export function Layout() {
           >
             <Menu size={24} />
           </button>
-          <Link to="/dashboard" className="app-logo">
+          <Link to="/" className="app-logo">
             <BrandIcon size={28} className="app-logo__icon" />
             ClientKhata
           </Link>
@@ -123,7 +123,7 @@ export function Layout() {
       />
       <aside className={`app-sidebar ${sidebarOpen ? 'app-sidebar--open' : ''}`} aria-label="Main navigation">
         <div className="app-sidebar__header">
-          <Link to="/dashboard" className="app-sidebar__title" onClick={() => setSidebarOpen(false)}>
+          <Link to="/" className="app-sidebar__title" onClick={() => setSidebarOpen(false)}>
             <BrandIcon size={24} className="app-sidebar__title-icon" />
             <span>ClientKhata</span>
           </Link>
