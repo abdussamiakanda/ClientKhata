@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
   const value = { user, profile, loading, encryptionKey };
 
   // Only demand encryption unlock if user is fully logged in and profile is loaded
-  const needsUnlock = user && profile !== null && !encryptionKey && !isLandingPage;
+  const needsUnlock = user && !loading && !encryptionKey && !isLandingPage;
 
   return (
     <AuthContext.Provider value={value}>

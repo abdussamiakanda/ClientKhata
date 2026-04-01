@@ -248,69 +248,67 @@ export function Settings() {
         </form>
       </section>
 
-      {profile?.encryptionSetup && (
-        <section className="settings-card" aria-labelledby="settings-security-title">
-          <h2 id="settings-security-title" className="settings-card__title">
-            <ShieldAlert size={20} aria-hidden />
-            Security Vault
-          </h2>
-          <form className="settings-card__body settings-card__body--form" onSubmit={handlePasswordChange}>
-            <p className="settings-form-desc">
-              Change your Master Recovery Password. This updates how your internal data key is encrypted. You will not lose any client data by changing this.
-            </p>
-            <div className="settings-form-grid">
-              <div className="settings-form-group full-width">
-                <label htmlFor="pwd-old" className="settings-card__label">Current Password</label>
-                <input
-                  id="pwd-old"
-                  type="password"
-                  className="input"
-                  value={pwdForm.oldPwd}
-                  onChange={(e) => setPwdForm(p => ({ ...p, oldPwd: e.target.value }))}
-                  placeholder="Enter current password"
-                  required
-                />
-              </div>
-              <div className="settings-form-group">
-                <label htmlFor="pwd-new" className="settings-card__label">New Password</label>
-                <input
-                  id="pwd-new"
-                  type="password"
-                  className="input"
-                  value={pwdForm.newPwd}
-                  onChange={(e) => setPwdForm(p => ({ ...p, newPwd: e.target.value }))}
-                  placeholder="At least 6 characters"
-                  required
-                />
-              </div>
-              <div className="settings-form-group">
-                <label htmlFor="pwd-confirm" className="settings-card__label">Confirm New Password</label>
-                <input
-                  id="pwd-confirm"
-                  type="password"
-                  className="input"
-                  value={pwdForm.confirmPwd}
-                  onChange={(e) => setPwdForm(p => ({ ...p, confirmPwd: e.target.value }))}
-                  placeholder="Match new password"
-                  required
-                />
-              </div>
+      <section className="settings-card" aria-labelledby="settings-security-title">
+        <h2 id="settings-security-title" className="settings-card__title">
+          <ShieldAlert size={20} aria-hidden />
+          Security Vault
+        </h2>
+        <form className="settings-card__body settings-card__body--form" onSubmit={handlePasswordChange}>
+          <p className="settings-form-desc">
+            Change your Master Recovery Password. This updates how your internal data key is encrypted. You will not lose any client data by changing this.
+          </p>
+          <div className="settings-form-grid">
+            <div className="settings-form-group full-width">
+              <label htmlFor="pwd-old" className="settings-card__label">Current Password</label>
+              <input
+                id="pwd-old"
+                type="password"
+                className="input"
+                value={pwdForm.oldPwd}
+                onChange={(e) => setPwdForm(p => ({ ...p, oldPwd: e.target.value }))}
+                placeholder="Enter current password"
+                required
+              />
             </div>
-            
-            <div className="settings-form-actions">
-              <button type="submit" className="btn-premium" disabled={savingPwd}>
-                {savingPwd ? 'Updating...' : 'Change Password'}
-              </button>
-              {pwdMessage.text && (
-                <span className={`profile-msg ${pwdMessage.type === 'error' ? 'profile-msg--error' : 'profile-success-msg'}`}>
-                  {pwdMessage.type === 'success' && <CheckCircle2 size={16} />}
-                  {pwdMessage.text}
-                </span>
-              )}
+            <div className="settings-form-group">
+              <label htmlFor="pwd-new" className="settings-card__label">New Password</label>
+              <input
+                id="pwd-new"
+                type="password"
+                className="input"
+                value={pwdForm.newPwd}
+                onChange={(e) => setPwdForm(p => ({ ...p, newPwd: e.target.value }))}
+                placeholder="At least 6 characters"
+                required
+              />
             </div>
-          </form>
-        </section>
-      )}
+            <div className="settings-form-group">
+              <label htmlFor="pwd-confirm" className="settings-card__label">Confirm New Password</label>
+              <input
+                id="pwd-confirm"
+                type="password"
+                className="input"
+                value={pwdForm.confirmPwd}
+                onChange={(e) => setPwdForm(p => ({ ...p, confirmPwd: e.target.value }))}
+                placeholder="Match new password"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="settings-form-actions">
+            <button type="submit" className="btn-premium" disabled={savingPwd}>
+              {savingPwd ? 'Updating...' : 'Change Password'}
+            </button>
+            {pwdMessage.text && (
+              <span className={`profile-msg ${pwdMessage.type === 'error' ? 'profile-msg--error' : 'profile-success-msg'}`}>
+                {pwdMessage.type === 'success' && <CheckCircle2 size={16} />}
+                {pwdMessage.text}
+              </span>
+            )}
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
