@@ -17,11 +17,12 @@ export function subscribeUserProfile(uid, onUpdate) {
   
   const ref = doc(db, PROFILES_COLLECTION, uid);
   return onSnapshot(ref, (snap) => {
-    if (snap.exists()) {
-      onUpdate({ id: snap.id, ...snap.data() });
-    } else {
-      onUpdate(null);
-    }
+    onUpdate({
+      id: snap.id,
+      data: snap.exists() ? snap.data() : null,
+      exists: snap.exists(),
+      fromCache: snap.metadata.fromCache
+    });
   });
 }
 

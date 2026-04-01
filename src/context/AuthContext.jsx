@@ -21,12 +21,14 @@ export function AuthProvider({ children }) {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser?.uid) {
+        setLoading(true); // Reset loading state for the new user
         currentUid = firebaseUser.uid;
         if (unsubProfile) unsubProfile();
-        unsubProfile = subscribeUserProfile(firebaseUser.uid, (data) => {
-          setProfile(data);
+        unsubProfile = subscribeUserProfile(firebaseUser.uid, (info) => {
+          const profileData = info.exists ? { id: info.id, ...info.data } : null;
+          setProfile(profileData);
           
-          if (data?.encryptionSetup) {
+          if (profileData?.encryptionSetup) {
             const cachedKey = getCachedEncryptionKey(firebaseUser.uid);
             if (cachedKey) {
               setGlobalEncryptionKey(cachedKey);
@@ -34,7 +36,10 @@ export function AuthProvider({ children }) {
             }
           }
           
-          setLoading(false);
+          // Only stop loading if we found data, or if we're sure (not just from cache) it doesn't exist
+          if (info.exists || !info.fromCache) {
+            setLoading(false);
+          }
         });
       } else {
         if (currentUid) {
