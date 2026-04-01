@@ -121,6 +121,7 @@
 .app-logo__icon {
   flex-shrink: 0;
   display: block;
+  color: var(--color-primary);
 }
 
 .app-logo:hover {

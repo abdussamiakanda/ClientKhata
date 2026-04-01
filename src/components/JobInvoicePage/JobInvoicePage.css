@@ -232,14 +232,71 @@
 }
 
 /* Loading state */
-.invoice-loading,
-.invoice-not-found {
+.invoice-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 50vh;
   gap: 1rem;
+}
+
+/* Error State */
+.invoice-error-container {
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: 4.5rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--color-border);
+  text-align: center;
+  max-width: 480px;
+  margin: 10vh auto;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+}
+
+.invoice-error-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-warning) 100%);
+}
+
+.invoice-error-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 1.5rem;
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: 50%;
+}
+
+.invoice-error-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  color: var(--color-text);
+  letter-spacing: -0.5px;
+}
+
+.invoice-error-desc {
+  font-size: 1.0625rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0 0 2.5rem;
+}
+
+.invoice-error-actions {
+  display: flex;
+  justify-content: center;
 }
 
 /* Print CSS */

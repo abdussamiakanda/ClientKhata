@@ -261,6 +261,33 @@
   border-radius: 9999px;
 }
 
+.settings-form-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.profile-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  animation: slideInFade 0.3s ease-out;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+}
+
+.profile-msg--error {
+  color: #ef4444; /* Fallback */
+  color: var(--color-danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1); /* Fallback */
+  background: var(--color-danger-bg, rgba(239, 68, 68, 0.1));
+}
+
 @keyframes slideInFade {
   from {
     opacity: 0;

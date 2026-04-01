@@ -6,7 +6,8 @@ import { subscribePayments } from '../../firebase/payments';
 import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { subscribeClients } from '../../firebase/clients';
 import { formatAmount } from '../../utils/format';
-import { ArrowLeft, Printer, Link as LinkIcon, Check } from 'lucide-react';
+import { getGlobalEncryptionKey, deriveInvoiceKey, decryptData } from '../../utils/encryption';
+import { ArrowLeft, Printer, Link as LinkIcon, Check, ShieldAlert } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
 import './JobInvoicePage.css';
 
@@ -30,8 +31,12 @@ export function JobInvoicePage() {
         if (active) {
           if (inv) {
             setInvoice(inv);
+            if (!inv.encryptedPayload) {
+              setLoading(false);
+            }
+          } else {
+            setLoading(false);
           }
-          setLoading(false);
         }
       } catch (err) {
         if (active) {
@@ -45,9 +50,51 @@ export function JobInvoicePage() {
     return () => { active = false; };
   }, [jobId]);
 
-  // 2. Generate on-the-fly for the owner if it does not exist
+  // 1.5 Decrypt payload if needed
   useEffect(() => {
-    if (!loading && !invoice && !authLoading && user?.uid && !error) {
+    if (!invoice || !invoice.encryptedPayload || invoice.decrypted) return;
+    
+    let key = window.location.hash.replace('#key=', '');
+    
+    if (!key && !authLoading && user?.uid === invoice.userId) {
+       const dek = getGlobalEncryptionKey();
+       if (dek) {
+         key = deriveInvoiceKey(jobId, dek);
+         if (key) {
+           window.history.replaceState(null, '', `#key=${key}`);
+         }
+       }
+    }
+
+    if (key) {
+      try {
+        const decryptedStr = decryptData(invoice.encryptedPayload, key);
+        if (decryptedStr !== invoice.encryptedPayload) {
+          const parsed = JSON.parse(decryptedStr);
+          setInvoice(prev => ({ ...prev, ...parsed, decrypted: true }));
+          setLoading(false);
+        } else {
+          setError('Incorrect encryption key.');
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error(e);
+        setError('Failed to decrypt invoice.');
+        setLoading(false);
+      }
+    } else if (!authLoading) {
+      setError('Encryption key is missing from the URL.');
+      setLoading(false);
+    }
+  }, [invoice, authLoading, user?.uid, jobId]);
+
+  // 2. Generate on-the-fly for the owner if it does not exist OR if it is corrupted
+  useEffect(() => {
+    const isCorrupted = invoice && invoice.decrypted && 
+                       (!invoice.client?.name || invoice.client?.name === 'Unknown Client') && 
+                       (!invoice.job?.amount || invoice.job?.amount === 0);
+                       
+    if (!loading && (!invoice || isCorrupted) && !authLoading && user?.uid && !error) {
       if (generatingRef.current) return;
       generatingRef.current = true;
       setGenerating(true);
@@ -74,6 +121,7 @@ export function JobInvoicePage() {
               await syncInvoiceData(jobId, uid, user.displayName, job, client, records, profile);
               const newInv = await getPublicInvoice(jobId);
               setInvoice(newInv);
+              if (!newInv.encryptedPayload) setLoading(false);
             } catch (err) {
               console.error(err);
               setError('Failed to generate invoice.');
@@ -102,11 +150,23 @@ export function JobInvoicePage() {
     );
   }
 
-  if (error || !invoice) {
+  if (error || (!invoice && !loading && !generating)) {
     return (
-      <div className="invoice-page invoice-not-found">
-        <p>{error || 'Invoice not found or you do not have permission to view it.'}</p>
-        <Link to="/" className="btn btn-primary">Go to Dashboard</Link>
+      <div className="invoice-wrapper page">
+        <div className="invoice-error-container">
+          <div className="invoice-error-icon">
+            <ShieldAlert size={40} strokeWidth={2.5} />
+          </div>
+          <h2 className="invoice-error-title">Invoice Access Denied</h2>
+          <p className="invoice-error-desc">
+            Secure access to this invoice is currently unavailable. Please ask the business owner to provide a valid secure link.
+          </p>
+          {user?.uid && (
+            <div className="invoice-error-actions">
+              <Link to="/dashboard" className="btn btn-primary">Return to Dashboard</Link>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -127,6 +187,12 @@ export function JobInvoicePage() {
   if (invoice.createdAt?.toDate) {
     try {
       formattedDate = invoice.createdAt.toDate().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch (_) {
+      formattedDate = new Date().toLocaleDateString();
+    }
+  } else if (invoice.createdAt) {
+    try {
+      formattedDate = new Date(invoice.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
     } catch (_) {
       formattedDate = new Date().toLocaleDateString();
     }

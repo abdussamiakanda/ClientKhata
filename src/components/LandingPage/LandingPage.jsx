@@ -11,6 +11,7 @@ import {
   Zap,
   BarChart3,
   FileText,
+  Shield,
 } from "lucide-react";
 import "./LandingPage.css";
 
@@ -28,8 +29,8 @@ export function LandingPage() {
       <header className="landing-header">
         <div className="landing-header__inner">
           <Link to="/" className="landing-logo">
-            <BrandIcon size={32} className="landing-logo__icon" />
-            <span>ClientKhata</span>
+            <BrandIcon size={28} className="landing-logo__icon" />
+            ClientKhata
           </Link>
 
           <div className="landing-header__actions">
@@ -85,11 +86,15 @@ export function LandingPage() {
 
             <div className="landing-hero__stats">
               <div className="stat">
-                <strong>100%</strong> Cloud Synced
+                <strong>Cloud</strong>  Synced
               </div>
               <div className="stat-divider"></div>
               <div className="stat">
-                <strong>100%</strong> Free to Use
+                <strong>Free</strong> Forever
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat">
+                <strong>E2E</strong> Encrypted
               </div>
             </div>
           </div>
@@ -98,7 +103,10 @@ export function LandingPage() {
           <div className="landing-hero__visual">
             <div className="mock-dashboard">
               <div className="mock-dash-header">
-                <div className="mock-mock-logo"></div>
+                <div className="mock-brand">
+                  <BrandIcon size={16} className="mock-brand-icon" />
+                  <span>ClientKhata</span>
+                </div>
                 <div className="mock-user"></div>
               </div>
               <div className="mock-dash-content">
@@ -235,6 +243,16 @@ export function LandingPage() {
               <p className="bento-desc">
                 Generate professional, print-ready PDF invoices instantly from
                 job details.
+              </p>
+            </div>
+
+            <div className="bento-card">
+              <div className="bento-icon">
+                <Shield size={32} />
+              </div>
+              <h3 className="bento-title">Zero-Knowledge Security</h3>
+              <p className="bento-desc">
+                Your data is exclusively yours. All client and payment details are encrypted end-to-end directly on your device.
               </p>
             </div>
 

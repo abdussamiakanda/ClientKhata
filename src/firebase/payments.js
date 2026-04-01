@@ -14,8 +14,36 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { createPaymentData, JOB_STATUSES, STATUS_TIMESTAMP_KEYS } from '../schema/paymentSchema';
+import { encryptData, decryptData, getGlobalEncryptionKey } from '../utils/encryption';
 
 const PAYMENTS_COLLECTION = 'payments';
+
+const ENCRYPTED_FIELDS = ['clientName', 'workDescription', 'notes', 'amount', 'title', 'description'];
+
+function encryptPaymentPayload(data) {
+  const key = getGlobalEncryptionKey();
+  if (!key) return data;
+  const result = { ...data };
+  ENCRYPTED_FIELDS.forEach(f => {
+    if (result[f] != null && result[f] !== '') {
+      result[f] = encryptData(String(result[f]), key);
+    }
+  });
+  return result;
+}
+
+function decryptPaymentPayload(data) {
+  const key = getGlobalEncryptionKey();
+  if (!key) return data;
+  const result = { ...data };
+  ENCRYPTED_FIELDS.forEach(f => {
+    if (result[f] != null && result[f] !== '') {
+      const decrypted = decryptData(String(result[f]), key);
+      result[f] = f === 'amount' ? Number(decrypted) : decrypted;
+    }
+  });
+  return result;
+}
 
 /**
  * Subscribe to payments/jobs for the current user (personal; real-time).
@@ -31,11 +59,15 @@ export function subscribePayments(uid, onUpdate) {
     orderBy('timestamp', 'desc')
   );
   return onSnapshot(q, (snapshot) => {
-    const payments = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-      timestamp: d.data().timestamp,
-    }));
+    const payments = snapshot.docs.map((d) => {
+      const data = d.data();
+      const decryptedData = decryptPaymentPayload(data);
+      return {
+        id: d.id,
+        ...decryptedData,
+        timestamp: data.timestamp,
+      };
+    });
     onUpdate(payments);
   });
 }
@@ -47,8 +79,9 @@ export function subscribePayments(uid, onUpdate) {
  */
 export async function addPayment(userId, data) {
   const payload = createPaymentData({ ...data, status: 'Pending', userId: userId || '' });
+  const encryptedPayload = encryptPaymentPayload(payload);
   const ref = await addDoc(collection(db, PAYMENTS_COLLECTION), {
-    ...payload,
+    ...encryptedPayload,
     pendingAt: serverTimestamp(),
     timestamp: serverTimestamp(),
   });
@@ -65,6 +98,7 @@ export async function updatePayment(paymentId, data) {
   const payload = { ...data };
   if (typeof payload.amount === 'number') payload.amount = payload.amount;
   else if (payload.amount != null) payload.amount = Number(payload.amount);
+  
   if (payload.clearPaymentRecordedAt) {
     payload.paymentRecordedAt = deleteField();
     delete payload.clearPaymentRecordedAt;
@@ -92,7 +126,9 @@ export async function updatePayment(paymentId, data) {
   delete payload.id;
   delete payload.timestamp;
   delete payload.userId;
-  await updateDoc(ref, payload);
+  
+  const encryptedPayload = encryptPaymentPayload(payload);
+  await updateDoc(ref, encryptedPayload);
 }
 
 /**

@@ -4,7 +4,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuth } from '../../context/AuthContext';
 import { saveUserProfile } from '../../firebase/profile';
-import { ArrowLeft, Sun, Moon, Palette, LayoutGrid, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, Palette, LayoutGrid, Building2, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { deriveKeyFromPassword, encryptData, decryptData, cacheEncryptionKey } from '../../utils/encryption';
 import './Settings.css';
 
 const PAID_COLUMN_OPTIONS = [
@@ -32,6 +33,10 @@ export function Settings() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState('');
 
+  const [pwdForm, setPwdForm] = useState({ oldPwd: '', newPwd: '', confirmPwd: '' });
+  const [savingPwd, setSavingPwd] = useState(false);
+  const [pwdMessage, setPwdMessage] = useState({ text: '', type: '' });
+
   useEffect(() => {
     if (profile) {
       setProfileForm({
@@ -56,6 +61,52 @@ export function Settings() {
       console.error(err);
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (!user || !profile || !profile.encryptedDataKey) return;
+    
+    if (pwdForm.newPwd !== pwdForm.confirmPwd) {
+      setPwdMessage({ text: 'New passwords do not match', type: 'error' });
+      return;
+    }
+    if (pwdForm.newPwd.length < 6) {
+      setPwdMessage({ text: 'Password must be at least 6 characters', type: 'error' });
+      return;
+    }
+    
+    setSavingPwd(true);
+    setPwdMessage({ text: '', type: '' });
+    
+    try {
+      // 1. Decrypt Data Encryption Key (DEK) with old password derived Key Encryption Key (KEK)
+      const oldKek = deriveKeyFromPassword(pwdForm.oldPwd, user.uid);
+      const dek = decryptData(profile.encryptedDataKey, oldKek);
+      
+      if (!dek || dek === profile.encryptedDataKey) {
+        throw new Error('Incorrect current password');
+      }
+      
+      // 2. Encrypt DEK with new password derived KEK
+      const newKek = deriveKeyFromPassword(pwdForm.newPwd, user.uid);
+      const newEncryptedDek = encryptData(dek, newKek);
+      
+      // 3. Save new encrypted DEK to profile
+      await saveUserProfile(user.uid, { encryptedDataKey: newEncryptedDek });
+      
+      // Refresh DEK cache timeout
+      cacheEncryptionKey(user.uid, dek);
+      
+      setPwdMessage({ text: 'Master password updated successfully!', type: 'success' });
+      setPwdForm({ oldPwd: '', newPwd: '', confirmPwd: '' });
+      setTimeout(() => setPwdMessage({ text: '', type: '' }), 5000);
+    } catch (err) {
+      console.error(err);
+      setPwdMessage({ text: err.message || 'Failed to update password', type: 'error' });
+    } finally {
+      setSavingPwd(false);
     }
   };
 
@@ -139,7 +190,7 @@ export function Settings() {
         </h2>
         <form className="settings-card__body settings-card__body--form" onSubmit={handleProfileSubmit}>
           <div className="settings-form-grid">
-            <div className="settings-form-group">
+            <div className="settings-form-group full-width">
               <label htmlFor="pf-name" className="settings-card__label">Business / Your Name</label>
               <input
                 id="pf-name"
@@ -196,6 +247,70 @@ export function Settings() {
           </div>
         </form>
       </section>
+
+      {profile?.encryptionSetup && (
+        <section className="settings-card" aria-labelledby="settings-security-title">
+          <h2 id="settings-security-title" className="settings-card__title">
+            <ShieldAlert size={20} aria-hidden />
+            Security Vault
+          </h2>
+          <form className="settings-card__body settings-card__body--form" onSubmit={handlePasswordChange}>
+            <p className="settings-form-desc">
+              Change your Master Recovery Password. This updates how your internal data key is encrypted. You will not lose any client data by changing this.
+            </p>
+            <div className="settings-form-grid">
+              <div className="settings-form-group full-width">
+                <label htmlFor="pwd-old" className="settings-card__label">Current Password</label>
+                <input
+                  id="pwd-old"
+                  type="password"
+                  className="input"
+                  value={pwdForm.oldPwd}
+                  onChange={(e) => setPwdForm(p => ({ ...p, oldPwd: e.target.value }))}
+                  placeholder="Enter current password"
+                  required
+                />
+              </div>
+              <div className="settings-form-group">
+                <label htmlFor="pwd-new" className="settings-card__label">New Password</label>
+                <input
+                  id="pwd-new"
+                  type="password"
+                  className="input"
+                  value={pwdForm.newPwd}
+                  onChange={(e) => setPwdForm(p => ({ ...p, newPwd: e.target.value }))}
+                  placeholder="At least 6 characters"
+                  required
+                />
+              </div>
+              <div className="settings-form-group">
+                <label htmlFor="pwd-confirm" className="settings-card__label">Confirm New Password</label>
+                <input
+                  id="pwd-confirm"
+                  type="password"
+                  className="input"
+                  value={pwdForm.confirmPwd}
+                  onChange={(e) => setPwdForm(p => ({ ...p, confirmPwd: e.target.value }))}
+                  placeholder="Match new password"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="settings-form-actions">
+              <button type="submit" className="btn-premium" disabled={savingPwd}>
+                {savingPwd ? 'Updating...' : 'Change Password'}
+              </button>
+              {pwdMessage.text && (
+                <span className={`profile-msg ${pwdMessage.type === 'error' ? 'profile-msg--error' : 'profile-success-msg'}`}>
+                  {pwdMessage.type === 'success' && <CheckCircle2 size={16} />}
+                  {pwdMessage.text}
+                </span>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
     </div>
   );
 }

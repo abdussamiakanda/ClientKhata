@@ -99,27 +99,39 @@
 .landing-logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text);
   text-decoration: none;
-  letter-spacing: -0.025em;
-  transition: color 0.2s ease;
+  letter-spacing: -0.02em;
+  transition: color 0.2s;
+}
+
+.landing-logo__icon {
+  flex-shrink: 0;
+  display: block;
+  color: var(--color-primary);
 }
 
 .landing-logo:hover {
   color: var(--color-primary);
 }
 
-.landing-logo__icon {
-  flex-shrink: 0;
-  color: var(--color-primary);
-  transition: transform 0.2s ease;
+@media (max-width: 768px) {
+  .landing-logo {
+    font-size: 1.125rem;
+  }
 }
 
-.landing-logo:hover .landing-logo__icon {
-  transform: scale(1.05);
+@media (max-width: 480px) {
+  .landing-logo {
+    font-size: 1rem;
+  }
+  .landing-logo__icon {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .landing-nav {
@@ -137,7 +149,7 @@
 }
 
 .landing-nav a:hover {
-  color: var(--color-text);
+  color: var(--color-primary);
 }
 
 @media (min-width: 768px) {
@@ -321,11 +333,19 @@
   background: var(--color-surface-elevated);
 }
 
-.mock-mock-logo {
-  width: 80px;
-  height: 12px;
-  background: var(--color-border);
-  border-radius: 6px;
+.mock-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.mock-brand-icon {
+  display: flex;
+  color: var(--color-primary);
 }
 
 .mock-user {
@@ -596,7 +616,7 @@
   }
   
   .card-large:nth-child(1) { grid-column: span 2; }
-  .card-large:nth-child(5) { grid-column: span 3; }
+  .card-large:nth-child(6) { grid-column: span 3; }
 }
 
 .bento-card {

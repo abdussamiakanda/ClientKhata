@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { X, Send, Mail } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { formatAmount } from "../../utils/format";
+import { getGlobalEncryptionKey, deriveInvoiceKey } from "../../utils/encryption";
 import "./SendInvoiceModal.css";
 
 export function SendInvoiceModal({
@@ -83,7 +84,9 @@ export function SendInvoiceModal({
     selectedJobs.forEach((job) => {
       const desc = job.workDescription || "Job";
       const amountStr = formatAmount(job.amount, currency);
-      const indUrl = `${window.location.origin}/invoice/${job.id}`;
+      const dek = getGlobalEncryptionKey();
+      const key = dek ? deriveInvoiceKey(job.id, dek) : '';
+      const indUrl = `${window.location.origin}/invoice/${job.id}${key ? `#key=${key}` : ''}`;
       itemsHtml += `
         <tr>
           <td class="td-pad" style="padding: 28px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top;">

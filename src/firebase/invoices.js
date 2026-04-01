@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
+import { getGlobalEncryptionKey, deriveInvoiceKey, encryptData } from '../utils/encryption';
 
 const INVOICES_COLLECTION = 'invoices';
 
@@ -30,7 +31,10 @@ export async function syncInvoiceData(jobId, userId, displayName, job, client, p
   
   const invoiceData = {
     userId,
-    businessName: profile?.businessName || displayName || 'My Business',
+    updatedAt: serverTimestamp()
+  };
+
+  const sensitivePayload = {
     business: {
       name: profile?.businessName || displayName || 'My Business',
       address: profile?.address || '',
@@ -40,10 +44,7 @@ export async function syncInvoiceData(jobId, userId, displayName, job, client, p
     jobId,
     invoiceNumber: `INV-${jobId.substring(0, 8).toUpperCase()}`,
     currency: job.currency || 'BDT',
-    createdAt: job.timestamp || serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    
-    // Snapshot of client
+    createdAt: job.timestamp?.toMillis ? job.timestamp.toMillis() : Date.now(),
     client: client ? {
       name: client.clientName || '',
       institution: client.institution || '',
@@ -51,21 +52,29 @@ export async function syncInvoiceData(jobId, userId, displayName, job, client, p
       contactNumber: client.contactNumber || '',
       email: client.email || ''
     } : { name: job.clientName || 'Unknown Client' },
-    
-    // Snapshot of job items
     job: {
       workDescription: job.workDescription || 'Services rendered',
       notes: job.notes || '',
       amount: Number(job.amount || 0),
     },
-    
-    // Calculated totals
     summary: {
       subtotal: Number(job.amount || 0),
       totalPaid,
       balanceDue
     }
   };
+
+  const dek = getGlobalEncryptionKey();
+  if (dek) {
+    const invoiceKey = deriveInvoiceKey(jobId, dek);
+    if (invoiceKey) {
+      invoiceData.encryptedPayload = encryptData(JSON.stringify(sensitivePayload), invoiceKey);
+    } else {
+      Object.assign(invoiceData, sensitivePayload);
+    }
+  } else {
+    Object.assign(invoiceData, sensitivePayload);
+  }
   
   const ref = doc(db, INVOICES_COLLECTION, jobId);
   await setDoc(ref, invoiceData, { merge: true });

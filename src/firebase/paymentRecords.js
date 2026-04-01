@@ -12,9 +12,37 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { createPaymentRecordData } from '../schema/paymentRecordSchema';
+import { encryptData, decryptData, getGlobalEncryptionKey } from '../utils/encryption';
 
 const PAYMENT_RECORDS_COLLECTION = 'payment_records';
 const PAYMENTS_COLLECTION = 'payments';
+
+const ENCRYPTED_FIELDS = ['amount', 'note'];
+
+function encryptRecordPayload(data) {
+  const key = getGlobalEncryptionKey();
+  if (!key) return data;
+  const result = { ...data };
+  ENCRYPTED_FIELDS.forEach(f => {
+    if (result[f] != null && result[f] !== '') {
+      result[f] = encryptData(String(result[f]), key);
+    }
+  });
+  return result;
+}
+
+function decryptRecordPayload(data) {
+  const key = getGlobalEncryptionKey();
+  if (!key) return data;
+  const result = { ...data };
+  ENCRYPTED_FIELDS.forEach(f => {
+    if (result[f] != null && result[f] !== '') {
+      const decrypted = decryptData(String(result[f]), key);
+      result[f] = f === 'amount' ? Number(decrypted) : decrypted;
+    }
+  });
+  return result;
+}
 
 /**
  * Subscribe to payment records for the current user (personal; real-time).
@@ -30,11 +58,15 @@ export function subscribePaymentRecords(uid, onUpdate) {
     orderBy('paidAt', 'desc')
   );
   return onSnapshot(q, (snapshot) => {
-    const records = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-      paidAt: d.data().paidAt,
-    }));
+    const records = snapshot.docs.map((d) => {
+      const data = d.data();
+      const decryptedData = decryptRecordPayload(data);
+      return {
+        id: d.id,
+        ...decryptedData,
+        paidAt: data.paidAt,
+      };
+    });
     onUpdate(records);
   });
 }
@@ -52,8 +84,9 @@ export function subscribePaymentRecords(uid, onUpdate) {
 export async function addPaymentRecord(jobId, amount, note, userId, jobAmount, currentTotal, jobStatus) {
   const newTotal = (currentTotal || 0) + Number(amount);
   const payload = createPaymentRecordData({ jobId, amount, note, userId: userId || '' });
+  const encryptedPayload = encryptRecordPayload(payload);
   const ref = await addDoc(collection(db, PAYMENT_RECORDS_COLLECTION), {
-    ...payload,
+    ...encryptedPayload,
     paidAt: serverTimestamp(),
   });
 

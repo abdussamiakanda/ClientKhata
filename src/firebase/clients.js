@@ -12,8 +12,31 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { createClientData } from '../schema/clientSchema';
+import { encryptData, decryptData, getGlobalEncryptionKey } from '../utils/encryption';
 
 const CLIENTS_COLLECTION = 'clients';
+
+const ENCRYPTED_FIELDS = ['clientName', 'institution', 'contactNumber', 'email', 'website', 'address', 'notes', 'imageBase64'];
+
+function encryptClientPayload(data) {
+  const key = getGlobalEncryptionKey();
+  if (!key) return data; // Wait for key
+  const result = { ...data };
+  ENCRYPTED_FIELDS.forEach(f => {
+    if (result[f]) result[f] = encryptData(String(result[f]), key);
+  });
+  return result;
+}
+
+function decryptClientPayload(data) {
+  const key = getGlobalEncryptionKey();
+  if (!key) return data;
+  const result = { ...data };
+  ENCRYPTED_FIELDS.forEach(f => {
+    if (result[f]) result[f] = decryptData(String(result[f]), key);
+  });
+  return result;
+}
 
 /**
  * Subscribe to clients for the current user (personal; real-time).
@@ -25,15 +48,19 @@ const CLIENTS_COLLECTION = 'clients';
 export function subscribeClients(uid, onUpdate) {
   const q = query(
     collection(db, CLIENTS_COLLECTION),
-    where('userId', '==', uid),
-    orderBy('clientName')
+    where('userId', '==', uid)
   );
   return onSnapshot(q, (snapshot) => {
-    const clients = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-      createdAt: d.data().createdAt,
-    }));
+    const clients = snapshot.docs.map((d) => {
+      const data = d.data();
+      const decryptedData = decryptClientPayload(data);
+      return {
+        id: d.id,
+        ...decryptedData,
+        createdAt: data.createdAt,
+      };
+    });
+    clients.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
     onUpdate(clients);
   });
 }
@@ -46,8 +73,9 @@ export function subscribeClients(uid, onUpdate) {
  */
 export async function addClient(createdBy, data) {
   const payload = createClientData({ ...data, userId: createdBy || '' });
+  const encryptedPayload = encryptClientPayload(payload);
   const ref = await addDoc(collection(db, CLIENTS_COLLECTION), {
-    ...payload,
+    ...encryptedPayload,
     createdAt: serverTimestamp(),
   });
   return ref.id;
@@ -73,7 +101,8 @@ export async function updateClient(clientId, data) {
     }
   });
   if (Object.keys(payload).length === 0) return;
-  await updateDoc(ref, payload);
+  const encryptedPayload = encryptClientPayload(payload);
+  await updateDoc(ref, encryptedPayload);
 }
 
 /**

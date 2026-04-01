@@ -15,6 +15,7 @@ import { JobDetailPage } from './components/JobDetailPage';
 import { JobInvoicePage } from './components/JobInvoicePage';
 import { PaymentsPage } from './components/PaymentsPage/PaymentsPage';
 import { Settings } from './components/Settings';
+import { NotFoundPage } from './components/NotFoundPage';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -46,9 +47,10 @@ function AppRoutes() {
           <Route path="job/:jobId" element={<JobDetailPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
