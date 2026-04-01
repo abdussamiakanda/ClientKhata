@@ -15,6 +15,7 @@ import { JobDetailPage } from './components/JobDetailPage';
 import { JobInvoicePage } from './components/JobInvoicePage';
 import { PaymentsPage } from './components/PaymentsPage/PaymentsPage';
 import { Settings } from './components/Settings';
+import { SecurityPolicy } from './components/SecurityPolicy/SecurityPolicy';
 import { NotFoundPage } from './components/NotFoundPage';
 
 function AppRoutes() {
@@ -28,6 +29,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/signup" element={<Navigate to="/login" replace />} />
+      <Route path="/policy" element={<SecurityPolicy />} />
       <Route path="/" element={<Outlet />}>
         <Route index element={<LandingPage />} />
         <Route path="invoice/:jobId" element={<JobInvoicePage />} />
@@ -57,14 +59,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <SettingsProvider>
-        <AuthProvider>
-          <BrowserRouter>
+    <BrowserRouter>
+      <ThemeProvider>
+        <SettingsProvider>
+          <AuthProvider>
             <AppRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </SettingsProvider>
-    </ThemeProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }

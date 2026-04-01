@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { subscribeUserProfile } from '../firebase/profile';
@@ -59,10 +60,13 @@ export function AuthProvider({ children }) {
     setEncryptionKey(key);
   };
 
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+
   const value = { user, profile, loading, encryptionKey };
 
   // Only demand encryption unlock if user is fully logged in and profile is loaded
-  const needsUnlock = user && profile !== null && !encryptionKey;
+  const needsUnlock = user && profile !== null && !encryptionKey && !isLandingPage;
 
   return (
     <AuthContext.Provider value={value}>

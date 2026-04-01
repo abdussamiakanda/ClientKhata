@@ -11,6 +11,8 @@ import {
   serverTimestamp,
   deleteField,
   Timestamp,
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { createPaymentData, JOB_STATUSES, STATUS_TIMESTAMP_KEYS } from '../schema/paymentSchema';
@@ -151,10 +153,37 @@ export async function updatePaymentTimestamps(paymentId, updates) {
 }
 
 /**
- * Delete a payment.
+ * Delete a payment (Job) and all its associated data (Invoices, Payment Records).
  * @param {string} paymentId
  */
 export async function deletePayment(paymentId) {
-  const ref = doc(db, PAYMENTS_COLLECTION, paymentId);
-  await deleteDoc(ref);
+  const batch = writeBatch(db);
+  
+  // 1. Delete the job document itself
+  const jobRef = doc(db, PAYMENTS_COLLECTION, paymentId);
+  batch.delete(jobRef);
+  
+  // 2. Delete the associated public invoice (Doc ID same as Job ID)
+  const invoiceRef = doc(db, 'invoices', paymentId);
+  batch.delete(invoiceRef);
+  
+  // 3. Find and delete all payment records for this job
+  const recordsQuery = query(
+    collection(db, 'payment_records'),
+    where('jobId', '==', paymentId)
+  );
+  
+  try {
+    const recordsSnap = await getDocs(recordsQuery);
+    recordsSnap.forEach((recordDoc) => {
+      batch.delete(recordDoc.ref);
+    });
+    
+    // Commit all deletions atomically
+    await batch.commit();
+  } catch (err) {
+    console.error('Failed to perform cascading delete:', err);
+    // Fallback: at least try to delete the job if batch fails (unlikely)
+    await deleteDoc(jobRef);
+  }
 }

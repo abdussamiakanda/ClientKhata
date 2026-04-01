@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { useTheme } from '../../context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { BrandIcon } from '../BrandIcon';
 import './Auth.css';
 
@@ -85,6 +86,13 @@ export function Login() {
                 'Continue with Google'
               )}
             </button>
+          </div>
+          
+          <div className="auth-footer">
+            <Link to="/policy" className="auth-footer__link">
+              <Shield size={14} />
+              Privacy & Security Policy
+            </Link>
           </div>
         </div>
       </div>

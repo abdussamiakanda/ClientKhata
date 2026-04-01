@@ -342,11 +342,16 @@ export function LandingPage() {
           </div>
 
           <div className="footer-links">
-            <span className="landing-footer__copy">
-              © {new Date().getFullYear()}
-            </span>
-            <span className="landing-footer__version">|</span>
-            <span className="landing-footer__dev-name">
+            <div className="footer-links__group">
+              <span className="landing-footer__copy">
+                © {new Date().getFullYear()}
+              </span>
+              <span className="landing-footer__version">|</span>
+              <Link to="/policy" className="landing-footer__link">
+                Privacy & Security
+              </Link>
+            </div>
+            <div className="landing-footer__dev-name">
               Developed by{" "}
               <a
                 href="https://abdussamiakanda.com"
@@ -356,7 +361,7 @@ export function LandingPage() {
               >
                 Md Abdus Sami Akanda
               </a>
-            </span>
+            </div>
           </div>
         </div>
       </footer>

@@ -8,11 +8,11 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 2.5rem;
-  background: rgba(var(--color-surface, 255, 255, 255), 0.75);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(12px);
   padding: 1rem 1.25rem;
   border-radius: 16px;
-  border: 1px solid rgba(var(--color-border, 226, 232, 240), 0.5);
+  border: 1px solid var(--color-border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   position: sticky;
   top: 1.5rem;
@@ -24,7 +24,9 @@
   color: #000000;
   padding: 4.5rem;
   border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
   position: relative;
   overflow: hidden;
   font-family: inherit;
@@ -37,7 +39,11 @@
   left: 0;
   right: 0;
   height: 8px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 100%
+  );
 }
 
 .invoice-header {
@@ -53,7 +59,11 @@
   font-size: 2.75rem;
   font-weight: 900;
   margin: 0 0 0.5rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -247,7 +257,9 @@
   color: var(--color-text);
   padding: 4.5rem 2.5rem;
   border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--color-border);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px var(--color-border);
   text-align: center;
   max-width: 480px;
   margin: 10vh auto;
@@ -264,7 +276,11 @@
   left: 0;
   right: 0;
   height: 6px;
-  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-warning) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-error) 0%,
+    var(--color-warning) 100%
+  );
 }
 
 .invoice-error-icon {
@@ -301,7 +317,6 @@
 
 /* Print CSS */
 @media print {
-
   /* Hide UI elements not meant for print */
   .no-print {
     display: none !important;
@@ -352,7 +367,7 @@
     padding: 1rem;
     position: static; /* Remove sticky on mobile to save screen space */
   }
-  
+
   .invoice-toolbar .btn {
     width: 100%;
     justify-content: center;
@@ -396,12 +411,12 @@
     width: auto;
   }
 
-  .invoice-table th, 
+  .invoice-table th,
   .invoice-table td {
     padding: 1rem 0.5rem;
   }
 
-  .th-amount, 
+  .th-amount,
   .td-amount {
     width: auto;
   }
