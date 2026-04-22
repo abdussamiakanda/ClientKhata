@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { subscribePayments, deletePayment, updatePayment, updatePaymentTimestamps } from '../../firebase/payments';
 import { subscribePaymentRecords, addPaymentRecord, deletePaymentRecord } from '../../firebase/paymentRecords';
@@ -11,6 +11,7 @@ import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText, CalendarPlus, PlayCircle, PackageCheck, CheckCircle, Plus, X } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
+import { resolveBackLink, navFromForNext } from '../../utils/navBack';
 import './JobDetailPage.css';
 
 const STATUS_LABELS = {
@@ -56,6 +57,8 @@ const STEP_ICONS = {
 
 export function JobDetailPage() {
   const { jobId } = useParams();
+  const location = useLocation();
+  const back = resolveBackLink(location, { pathname: '/jobs', label: 'Jobs' });
   const { user, profile, loading: authLoading } = useAuth();
   const [payments, setPayments] = useState([]);
   const [paymentRecords, setPaymentRecords] = useState([]);
@@ -295,14 +298,14 @@ export function JobDetailPage() {
     return (
       <div className="page job-detail-page">
         <div className="page-header">
-          <Link to="/jobs" className="btn btn-secondary">
+          <Link to={back.to} className="btn btn-secondary">
             <ArrowLeft size={18} />
-            Back to Jobs
+            Back to {back.label}
           </Link>
         </div>
         <div className="job-detail-not-found">
           <p>Job not found.</p>
-          <Link to="/jobs" className="btn btn-primary">Back to Jobs</Link>
+          <Link to={back.to} className="btn btn-primary">Back to {back.label}</Link>
         </div>
       </div>
     );
@@ -311,9 +314,9 @@ export function JobDetailPage() {
   return (
     <div className="page job-detail-page">
       <div className="page-header job-detail-page__header">
-        <Link to="/jobs" className="btn btn-secondary">
+        <Link to={back.to} className="btn btn-secondary">
           <ArrowLeft size={18} />
-          Back to Jobs
+          Back to {back.label}
         </Link>
       </div>
 
@@ -352,7 +355,7 @@ export function JobDetailPage() {
                     <User size={16} />
                     Client
                   </span>
-                  <Link to={`/client/${job.clientId}`} className="job-detail-card__field-value job-detail-card__link">
+                  <Link to={`/client/${job.clientId}`} state={navFromForNext(location)} className="job-detail-card__field-value job-detail-card__link">
                     {job.clientName || '—'}
                   </Link>
                 </div>

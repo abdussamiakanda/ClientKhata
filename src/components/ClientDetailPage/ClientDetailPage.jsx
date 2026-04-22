@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { subscribeClients } from '../../firebase/clients';
 import { subscribePayments, deletePayment } from '../../firebase/payments';
@@ -25,10 +25,13 @@ import {
   Send,
 } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
+import { resolveBackLink, navFromForNext } from '../../utils/navBack';
 import './ClientDetailPage.css';
 
 export function ClientDetailPage() {
   const { clientId } = useParams();
+  const location = useLocation();
+  const back = resolveBackLink(location, { pathname: '/clients', label: 'Clients' });
   const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -172,14 +175,14 @@ export function ClientDetailPage() {
     return (
       <div className="page client-detail-page">
         <div className="page-header">
-          <Link to="/clients" className="btn btn-secondary">
+          <Link to={back.to} className="btn btn-secondary">
             <ArrowLeft size={18} />
-            Back to Clients
+            Back to {back.label}
           </Link>
         </div>
         <div className="client-detail-not-found">
           <p>Client not found.</p>
-          <Link to="/clients" className="btn btn-primary">Back to Clients</Link>
+          <Link to={back.to} className="btn btn-primary">Back to {back.label}</Link>
         </div>
       </div>
     );
@@ -188,9 +191,9 @@ export function ClientDetailPage() {
   return (
     <div className="page client-detail-page">
       <div className="page-header client-detail-page__header">
-        <Link to="/clients" className="btn btn-secondary">
+        <Link to={back.to} className="btn btn-secondary">
           <ArrowLeft size={18} />
-          Back to Clients
+          Back to {back.label}
         </Link>
       </div>
 
@@ -328,6 +331,7 @@ export function ClientDetailPage() {
                       <div className="client-detail-job__actions">
                         <Link
                           to={`/job/${job.id}`}
+                          state={navFromForNext(location)}
                           className="btn btn-small btn-secondary"
                           aria-label="View job"
                         >

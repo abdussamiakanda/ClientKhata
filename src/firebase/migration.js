@@ -1,6 +1,6 @@
 import { collection, query, where, getDocs, doc, writeBatch, deleteField } from 'firebase/firestore';
 import { db } from './config';
-import { encryptData, getGlobalEncryptionKey, deriveInvoiceKey } from '../utils/encryption';
+import { encryptData, decryptData, getGlobalEncryptionKey, deriveInvoiceKey } from '../utils/encryption';
 
 const MIGRATE_BATCH_SIZE = 500; // Firestore limit for write batches
 
@@ -194,4 +194,54 @@ export async function migrateUnencryptedData(uid) {
   } catch (err) {
     console.error('Failed to migrate unencrypted data:', err);
   }
+}
+
+async function deleteCollectionByUserId(collectionName, uid) {
+  const q = query(collection(db, collectionName), where('userId', '==', uid));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+
+  let batch = writeBatch(db);
+  let operationCount = 0;
+
+  for (const item of snap.docs) {
+    batch.delete(item.ref);
+    operationCount++;
+    if (operationCount === MIGRATE_BATCH_SIZE) {
+      await batch.commit();
+      batch = writeBatch(db);
+      operationCount = 0;
+    }
+  }
+
+  if (operationCount > 0) {
+    await batch.commit();
+  }
+}
+
+/**
+ * Permanently wipes all encrypted vault data for a user.
+ * This is intended as a last-resort recovery path when both master password
+ * and recovery key are lost.
+ * @param {string} uid - The current user's ID
+ */
+export async function resetEncryptedVault(uid) {
+  if (!uid) return;
+
+  await Promise.all([
+    deleteCollectionByUserId('clients', uid),
+    deleteCollectionByUserId('payments', uid),
+    deleteCollectionByUserId('payment_records', uid),
+    deleteCollectionByUserId('invoices', uid)
+  ]);
+
+  const profileRef = doc(db, 'user_profiles', uid);
+  let batch = writeBatch(db);
+  batch.set(profileRef, {
+    encryptionSetup: false,
+    recoverySetup: false,
+    encryptedDataKey: deleteField(),
+    encryptedDataKeyByRecovery: deleteField(),
+  }, { merge: true });
+  await batch.commit();
 }

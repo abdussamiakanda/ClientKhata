@@ -60,12 +60,12 @@ export function SecurityPolicy() {
             </div>
             <h2>The Master Password</h2>
             <p>
-              Because of our security model, <strong>we cannot recover your Master Password</strong> if you forget it. 
-              We don't store it, and we don't have a "backdoor" to your data.
+              We do not store your Master Password and cannot read it. During secure setup, ClientKhata gives you a
+              one-time <strong>Recovery Key</strong> that can unlock your vault if your Master Password is lost.
             </p>
             <div className="policy-alert">
-              <strong>Important:</strong> If you lose your Master Password, your encrypted client data will be 
-              permanently unreadable, even to us. Please keep it in a safe place (like a password manager).
+              <strong>Important:</strong> Keep both your Master Password and Recovery Key in a password manager.
+              If both are lost, your only option is a vault reset that permanently deletes encrypted data and starts a fresh vault.
             </div>
           </section>
 

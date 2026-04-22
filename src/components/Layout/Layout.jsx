@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
-import { Home, Users, Briefcase, Banknote, Settings, LogOut, User, ChevronDown, Menu, X } from 'lucide-react';
+import { Home, Users, Briefcase, Banknote, Settings, LogOut, User, ChevronDown, Menu, X, Target } from 'lucide-react';
 import { BrandIcon } from '../BrandIcon';
+import { navFromForNext } from '../../utils/navBack';
 import './Layout.css';
 
 export function Layout() {
   const { user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -76,6 +78,10 @@ export function Layout() {
             <Users size={18} className="app-nav__icon" />
             <span className="app-nav__link-text">Clients</span>
           </NavLink>
+          <NavLink to="/hunt" className={({ isActive }) => `app-nav__link ${isActive ? 'app-nav__link--active' : ''}`}>
+            <Target size={18} className="app-nav__icon" />
+            <span className="app-nav__link-text">Hunt</span>
+          </NavLink>
         </nav>
         <div className="app-header__actions" ref={dropdownRef}>
           <button
@@ -101,7 +107,7 @@ export function Layout() {
               {user?.email && <span className="app-header__dropdown-email">{user.email}</span>}
             </div>
             <div className="app-header__dropdown-divider" />
-            <Link to="/settings" className="app-header__dropdown-item" onClick={() => setDropdownOpen(false)}>
+            <Link to="/settings" state={navFromForNext(location)} className="app-header__dropdown-item" onClick={() => setDropdownOpen(false)}>
               <Settings size={16} />
               Settings
             </Link>
@@ -152,6 +158,10 @@ export function Layout() {
           <NavLink to="/clients" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
             <Users size={20} className="app-sidebar__icon" />
             <span>Clients</span>
+          </NavLink>
+          <NavLink to="/hunt" className={({ isActive }) => `app-sidebar__link ${isActive ? 'app-sidebar__link--active' : ''}`} onClick={() => setSidebarOpen(false)}>
+            <Target size={20} className="app-sidebar__icon" />
+            <span>Hunt</span>
           </NavLink>
         </nav>
       </aside>

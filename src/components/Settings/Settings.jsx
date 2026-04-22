@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useAuth } from '../../context/AuthContext';
 import { saveUserProfile } from '../../firebase/profile';
 import { ArrowLeft, Sun, Moon, Palette, LayoutGrid, Building2, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { deriveKeyFromPassword, encryptData, decryptData, cacheEncryptionKey } from '../../utils/encryption';
+import { deriveKeyFromPassword, encryptData, decryptData, cacheEncryptionKey, generateRecoveryKey } from '../../utils/encryption';
+import { resolveBackLink } from '../../utils/navBack';
 import './Settings.css';
 
 const PAID_COLUMN_OPTIONS = [
@@ -20,6 +21,8 @@ const PAID_COLUMN_OPTIONS = [
 ];
 
 export function Settings() {
+  const location = useLocation();
+  const back = resolveBackLink(location, { pathname: '/dashboard', label: 'Home' });
   const { theme, setTheme } = useTheme();
   const { settings, setPaidColumnCutoffDays } = useSettings();
   const { user, profile } = useAuth();
@@ -36,6 +39,10 @@ export function Settings() {
   const [pwdForm, setPwdForm] = useState({ oldPwd: '', newPwd: '', confirmPwd: '' });
   const [savingPwd, setSavingPwd] = useState(false);
   const [pwdMessage, setPwdMessage] = useState({ text: '', type: '' });
+  const [recoveryForm, setRecoveryForm] = useState({ currentPwd: '' });
+  const [savingRecovery, setSavingRecovery] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState({ text: '', type: '' });
+  const [latestRecoveryKey, setLatestRecoveryKey] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -110,12 +117,51 @@ export function Settings() {
     }
   };
 
+  const handleRegenerateRecoveryKey = async (e) => {
+    e.preventDefault();
+    if (!user || !profile || !profile.encryptedDataKey) return;
+    if (!recoveryForm.currentPwd.trim()) {
+      setRecoveryMessage({ text: 'Current password is required', type: 'error' });
+      return;
+    }
+
+    setSavingRecovery(true);
+    setRecoveryMessage({ text: '', type: '' });
+    setLatestRecoveryKey('');
+
+    try {
+      const currentKek = deriveKeyFromPassword(recoveryForm.currentPwd, user.uid);
+      const dek = decryptData(profile.encryptedDataKey, currentKek);
+      if (!dek || dek === profile.encryptedDataKey) {
+        throw new Error('Incorrect current password');
+      }
+
+      const newRecoveryKey = generateRecoveryKey();
+      const encryptedDataKeyByRecovery = encryptData(dek, newRecoveryKey);
+
+      await saveUserProfile(user.uid, {
+        recoverySetup: true,
+        encryptedDataKeyByRecovery
+      });
+
+      cacheEncryptionKey(user.uid, dek);
+      setLatestRecoveryKey(newRecoveryKey);
+      setRecoveryForm({ currentPwd: '' });
+      setRecoveryMessage({ text: 'Recovery key regenerated. Save it now; this key is shown only once.', type: 'success' });
+    } catch (err) {
+      console.error(err);
+      setRecoveryMessage({ text: err.message || 'Failed to regenerate recovery key', type: 'error' });
+    } finally {
+      setSavingRecovery(false);
+    }
+  };
+
   return (
     <div className="page settings-page">
       <div className="page-header settings-page__header">
-        <Link to="/dashboard" className="btn btn-secondary">
+        <Link to={back.to} className="btn btn-secondary">
           <ArrowLeft size={18} />
-          Back to Dashboard
+          Back to {back.label}
         </Link>
         <h1 className="page-title">Settings</h1>
       </div>
@@ -307,6 +353,45 @@ export function Settings() {
               </span>
             )}
           </div>
+        </form>
+        <form className="settings-card__body settings-card__body--form" onSubmit={handleRegenerateRecoveryKey}>
+          <p className="settings-form-desc">
+            Regenerate your one-time recovery key. You must provide your current master password to confirm.
+          </p>
+          <div className="settings-form-grid">
+            <div className="settings-form-group full-width">
+              <label htmlFor="recovery-current" className="settings-card__label">Current Password</label>
+              <input
+                id="recovery-current"
+                type="password"
+                className="input"
+                value={recoveryForm.currentPwd}
+                onChange={(e) => setRecoveryForm({ currentPwd: e.target.value })}
+                placeholder="Enter current password"
+                required
+              />
+            </div>
+          </div>
+          <div className="settings-form-actions">
+            <button type="submit" className="btn-premium" disabled={savingRecovery}>
+              {savingRecovery ? 'Generating...' : 'Regenerate Recovery Key'}
+            </button>
+          </div>
+          {recoveryMessage.text && (
+            <span className={`profile-msg ${recoveryMessage.type === 'error' ? 'profile-msg--error' : 'profile-success-msg'}`}>
+              {recoveryMessage.type === 'success' && <CheckCircle2 size={16} />}
+              {recoveryMessage.text}
+            </span>
+          )}
+          {latestRecoveryKey && (
+            <div className="encryption-warning">
+              <div className="encryption-warning-header">
+                <ShieldAlert size={16} />
+                <span>New Recovery Key</span>
+              </div>
+              <code className="recovery-key-value">{latestRecoveryKey}</code>
+            </div>
+          )}
         </form>
       </section>
     </div>

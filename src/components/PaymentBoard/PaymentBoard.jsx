@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { formatAmount } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { useSettings } from '../../context/SettingsContext';
 import { Pencil, Trash2, PackageCheck, Clock, PlayCircle, CheckCircle, Eye, Inbox, FileText } from 'lucide-react';
+import { navFromForNext } from '../../utils/navBack';
 import './PaymentBoard.css';
 
 const DRAG_TYPE = 'application/x-board-job';
@@ -41,6 +42,7 @@ function getStatusTimestampMs(p) {
 }
 
 export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, onEdit, onDelete }) {
+  const location = useLocation();
   const { settings } = useSettings();
   const cutoffMs = settings.paidColumnCutoffDays > 0
     ? settings.paidColumnCutoffDays * 24 * 60 * 60 * 1000
@@ -144,6 +146,7 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                     <div className="board-card-actions">
                       <Link
                         to={`/job/${job.id}`}
+                        state={navFromForNext(location)}
                         className="board-card-action btn btn-icon"
                         onClick={(e) => e.stopPropagation()}
                         aria-label="View"

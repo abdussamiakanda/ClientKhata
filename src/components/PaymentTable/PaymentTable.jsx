@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { formatAmount, getStatusBadgeClass, formatTimestamp } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { getJobTimestampMs, getRangeBounds } from '../../utils/dateRange';
 import { DateRangeFilter } from '../DateRangeFilter';
 import { Search, Pencil, Trash2, Eye, FileText } from 'lucide-react';
+import { navFromForNext } from '../../utils/navBack';
 import './PaymentTable.css';
 
 /** Same field as shown in Status column: pendingAt / ongoingAt / deliveredAt / paidAt. Fallback to timestamp. */
@@ -38,6 +39,7 @@ function sortByStatusAndDate(payments) {
 }
 
 export function PaymentTable({ payments, onEdit, onDelete }) {
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [dateRangeValue, setDateRangeValue] = useState({
@@ -163,6 +165,7 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
                   <td className="col-actions">
                     <Link
                       to={`/job/${payment.id}`}
+                      state={navFromForNext(location)}
                       className="btn btn-small btn-secondary"
                       aria-label="View"
                     >

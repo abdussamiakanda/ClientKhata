@@ -9,6 +9,7 @@ A single-page app for tracking client work and payments. Built with **React (Vit
 - **Jobs / Work**: Multiple jobs per client; job status flow: Pending → Ongoing → Delivered → Paid (each with timestamp); Paid is final and not draggable; payment recording will be on a separate payments page later
 - **Table**: Grouped by client, search and filter by status/delivered
 - **Payments**: Record payments per job (partial or full); multiple payment entries per job; Add payment via modal (select job, amount, note); remove payment entries; style aligned with other pages
+- **Hunt**: Paste job posts/circulars and generate AI summary, suggestions, and one auto-detected draft (email/cover letter/WhatsApp)
 
 ## Firestore schema
 
@@ -85,7 +86,16 @@ VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_STORAGE_BUCKET=...appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
+VITE_HUNT_AI_API_KEY=...
+VITE_HUNT_AI_BASE_URL=http://localhost:11434
+VITE_HUNT_AI_ENDPOINT_PATH=/api/chat
+VITE_HUNT_AI_MODEL=gemma4
+VITE_HUNT_AI_REQUEST_STYLE=ollama
 ```
+
+For Hunt V1, API calls are made directly from the frontend. If `VITE_HUNT_AI_API_KEY` or `VITE_HUNT_AI_BASE_URL` is missing, the Hunt page will show a setup warning and disable generation.
+
+In local development (`npm run dev`), Hunt requests are proxied through Vite at `/api/hunt-ai/*` to avoid browser CORS preflight failures when your AI server does not return CORS headers.
 
 ### 4. Firestore indexes (if required)
 

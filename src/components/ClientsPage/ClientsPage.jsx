@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { subscribeClients, deleteClient } from '../../firebase/clients';
 import { subscribePayments } from '../../firebase/payments';
 import { ClientForm } from '../ClientForm';
 import { ConfirmModal } from '../ConfirmModal';
 import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Eye } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
+import { navFromForNext } from '../../utils/navBack';
 import './ClientsPage.css';
 
 export function ClientsPage() {
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -193,6 +195,7 @@ export function ClientsPage() {
                 <div className="client-card__footer">
                   <Link
                     to={`/client/${client.id}`}
+                    state={navFromForNext(location)}
                     className="btn btn-small btn-secondary client-card__btn-details"
                     aria-label="View details"
                   >

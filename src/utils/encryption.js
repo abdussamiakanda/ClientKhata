@@ -19,6 +19,10 @@ export function generateRandomEncryptionKey() {
   return CryptoJS.enc.Base64.stringify(randomWords);
 }
 
+export function generateRecoveryKey() {
+  return generateRandomEncryptionKey();
+}
+
 export function deriveKeyFromPassword(password, salt) {
   const saltWords = CryptoJS.enc.Utf8.parse(salt);
   const key = CryptoJS.PBKDF2(password, saltWords, {

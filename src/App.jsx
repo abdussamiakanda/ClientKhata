@@ -14,6 +14,7 @@ import { JobsPage } from './components/JobsPage';
 import { JobDetailPage } from './components/JobDetailPage';
 import { JobInvoicePage } from './components/JobInvoicePage';
 import { PaymentsPage } from './components/PaymentsPage/PaymentsPage';
+import { HuntPage } from './components/HuntPage';
 import { Settings } from './components/Settings';
 import { SecurityPolicy } from './components/SecurityPolicy/SecurityPolicy';
 import { NotFoundPage } from './components/NotFoundPage';
@@ -46,6 +47,7 @@ function AppRoutes() {
           <Route path="clients" element={<ClientsPage />} />
           <Route path="client/:clientId" element={<ClientDetailPage />} />
           <Route path="jobs" element={<JobsPage />} />
+          <Route path="hunt" element={<HuntPage />} />
           <Route path="job/:jobId" element={<JobDetailPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="settings" element={<Settings />} />

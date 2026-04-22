@@ -1,7 +1,6 @@
 /* Dedicated styles for Encryption Prompt that aren't in Auth.css */
 
 .encryption-warning {
-  margin-top: 0.5rem;
   padding: 1rem;
   background-color: var(--color-warning-alpha);
   border: 1px solid var(--color-warning);
@@ -21,5 +20,46 @@
   gap: 0.5rem;
   font-weight: 600;
   color: var(--color-warning);
+}
+
+.recovery-key-value {
+  display: block;
+  padding: 0.625rem;
+  border-radius: 8px;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.unlock-mode-switch {
+  display: flex;
+  gap: 0.5rem;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+}
+
+.auth-link-button {
+  margin-top: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.auth-link-button--danger {
+  color: var(--color-warning);
+}
+
+.auth-recovery-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
 }
 

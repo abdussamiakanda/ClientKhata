@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getPublicInvoice, syncInvoiceData } from '../../firebase/invoices';
 import { subscribePayments } from '../../firebase/payments';
@@ -9,10 +9,17 @@ import { formatAmount } from '../../utils/format';
 import { getGlobalEncryptionKey, deriveInvoiceKey, decryptData } from '../../utils/encryption';
 import { ArrowLeft, Printer, Link as LinkIcon, Check, ShieldAlert } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
+import { resolveBackLink } from '../../utils/navBack';
 import './JobInvoicePage.css';
 
 export function JobInvoicePage() {
   const { jobId } = useParams();
+  const location = useLocation();
+  const jobBack = resolveBackLink(location, {
+    pathname: jobId ? `/job/${jobId}` : '/jobs',
+    label: jobId ? 'Job' : 'Jobs',
+  });
+  const dashBack = resolveBackLink(location, { pathname: '/dashboard', label: 'Home' });
   const { user, profile, loading: authLoading } = useAuth();
   
   const [invoice, setInvoice] = useState(null);
@@ -163,7 +170,7 @@ export function JobInvoicePage() {
           </p>
           {user?.uid && (
             <div className="invoice-error-actions">
-              <Link to="/dashboard" className="btn btn-primary">Return to Dashboard</Link>
+              <Link to={dashBack.to} className="btn btn-primary">Back to {dashBack.label}</Link>
             </div>
           )}
         </div>
@@ -206,9 +213,9 @@ export function JobInvoicePage() {
     <div className="invoice-wrapper page">
       <div className="invoice-toolbar no-print">
         {user?.uid ? (
-          <Link to={`/job/${jobId}`} className="btn btn-secondary">
+          <Link to={jobBack.to} className="btn btn-secondary">
             <ArrowLeft size={18} />
-            Back to Job
+            Back to {jobBack.label}
           </Link>
         ) : (
           <div /> // Spacer for guests
