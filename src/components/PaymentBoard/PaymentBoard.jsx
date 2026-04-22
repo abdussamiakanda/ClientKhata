@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { formatAmount } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
@@ -8,6 +8,11 @@ import { navFromForNext } from '../../utils/navBack';
 import './PaymentBoard.css';
 
 const DRAG_TYPE = 'application/x-board-job';
+
+const LONG_PRESS_MS = 480;
+const LONG_PRESS_MOVE_CANCEL_PX = 14;
+const VIEWPORT_EDGE_PX = 72;
+const EDGE_SCROLL_STEP = 16;
 
 const EMPTY_ICONS = {
   Pending: Clock,
@@ -41,12 +46,189 @@ function getStatusTimestampMs(p) {
   return 0;
 }
 
+function getMainScrollEl() {
+  return document.querySelector('main.app-main');
+}
+
+function resolveColumnStatusFromPoint(clientX, clientY) {
+  const el = document.elementFromPoint(clientX, clientY);
+  let n = el;
+  while (n) {
+    const s = n.dataset?.boardStatus;
+    if (s && JOB_STATUSES.includes(s)) return s;
+    n = n.parentElement;
+  }
+  return null;
+}
+
+function applyMainVerticalEdgeScroll(clientY) {
+  const main = getMainScrollEl();
+  if (!main) return;
+  const h = window.visualViewport?.height ?? window.innerHeight;
+  const topEdge = VIEWPORT_EDGE_PX;
+  const bottomEdge = h - VIEWPORT_EDGE_PX;
+  const max = main.scrollHeight - main.clientHeight;
+  if (clientY < topEdge) {
+    main.scrollTop = Math.max(0, main.scrollTop - EDGE_SCROLL_STEP);
+  } else if (clientY > bottomEdge) {
+    main.scrollTop = Math.min(max, main.scrollTop + EDGE_SCROLL_STEP);
+  }
+}
+
 export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, onEdit, onDelete }) {
   const location = useLocation();
   const { settings } = useSettings();
   const cutoffMs = settings.paidColumnCutoffDays > 0
     ? settings.paidColumnCutoffDays * 24 * 60 * 60 * 1000
     : 0;
+
+  const [touchArmedJobId, setTouchArmedJobId] = useState(null);
+  const [touchOverColumnStatus, setTouchOverColumnStatus] = useState(null);
+
+  const longPressTimerRef = useRef(null);
+  const longPressJobRef = useRef(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
+  const armedFromStatusRef = useRef('');
+  const armedJobIdRef = useRef(null);
+  const touchOverColumnRef = useRef(null);
+  const docMoveRef = useRef(null);
+  const docEndRef = useRef(null);
+  const onStatusChangeRef = useRef(onStatusChange);
+  onStatusChangeRef.current = onStatusChange;
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressJobRef.current = null;
+  }, []);
+
+  const detachDocumentTouch = useCallback(() => {
+    if (docMoveRef.current) {
+      document.removeEventListener('touchmove', docMoveRef.current, { capture: true });
+      docMoveRef.current = null;
+    }
+    if (docEndRef.current) {
+      document.removeEventListener('touchend', docEndRef.current, { capture: true });
+      document.removeEventListener('touchcancel', docEndRef.current, { capture: true });
+      docEndRef.current = null;
+    }
+  }, []);
+
+  const finishTouchDrag = useCallback((clientX, clientY) => {
+    detachDocumentTouch();
+    const armedId = armedJobIdRef.current;
+    const fromStatus = armedFromStatusRef.current;
+    armedJobIdRef.current = null;
+    setTouchArmedJobId(null);
+    setTouchOverColumnStatus(null);
+    touchOverColumnRef.current = null;
+    if (!armedId) return;
+    const newStatus = resolveColumnStatusFromPoint(clientX, clientY);
+    if (newStatus && newStatus !== 'Paid' && newStatus !== fromStatus) {
+      onStatusChangeRef.current(armedId, newStatus);
+    }
+  }, [detachDocumentTouch]);
+
+  useEffect(() => () => {
+    clearLongPressTimer();
+    detachDocumentTouch();
+  }, [clearLongPressTimer, detachDocumentTouch]);
+
+  useEffect(() => {
+    const main = getMainScrollEl();
+    if (!main) return;
+    if (touchArmedJobId) {
+      const prev = main.style.position;
+      const prevZ = main.style.zIndex;
+      main.style.position = 'relative';
+      main.style.zIndex = '52';
+      return () => {
+        main.style.position = prev;
+        main.style.zIndex = prevZ;
+      };
+    }
+  }, [touchArmedJobId]);
+
+  const armTouchDrag = useCallback((job) => {
+    clearLongPressTimer();
+    armedFromStatusRef.current = job.status;
+    armedJobIdRef.current = job.id;
+    setTouchArmedJobId(job.id);
+
+    const onMove = (e) => {
+      const t = e.touches[0];
+      if (!t) return;
+      const { clientX, clientY } = t;
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      const inVerticalEdge = clientY < VIEWPORT_EDGE_PX || clientY > h - VIEWPORT_EDGE_PX;
+      if (inVerticalEdge) {
+        applyMainVerticalEdgeScroll(clientY);
+      }
+      e.preventDefault();
+
+      const col = resolveColumnStatusFromPoint(clientX, clientY);
+      if (col !== touchOverColumnRef.current) {
+        touchOverColumnRef.current = col;
+        setTouchOverColumnStatus(col);
+      }
+    };
+
+    const onEnd = (e) => {
+      const t = e.changedTouches[0];
+      const cx = t?.clientX ?? 0;
+      const cy = t?.clientY ?? 0;
+      finishTouchDrag(cx, cy);
+    };
+
+    docMoveRef.current = onMove;
+    docEndRef.current = onEnd;
+    document.addEventListener('touchmove', onMove, { passive: false, capture: true });
+    document.addEventListener('touchend', onEnd, { capture: true });
+    document.addEventListener('touchcancel', onEnd, { capture: true });
+  }, [clearLongPressTimer, finishTouchDrag]);
+
+  function handleCardTouchStart(e, job) {
+    if (armedJobIdRef.current) return;
+    if (job.status === 'Paid') return;
+    if (e.target.closest?.('.board-card-actions')) return;
+    const t = e.touches[0];
+    if (!t) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+    longPressJobRef.current = job;
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      const j = longPressJobRef.current;
+      longPressJobRef.current = null;
+      if (!j) return;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+          navigator.vibrate(12);
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      armTouchDrag(j);
+    }, LONG_PRESS_MS);
+  }
+
+  function handleCardTouchMove(e) {
+    if (armedJobIdRef.current) return;
+    const t = e.touches[0];
+    if (!t || !longPressTimerRef.current) return;
+    const dx = t.clientX - touchStartRef.current.x;
+    const dy = t.clientY - touchStartRef.current.y;
+    if (dx * dx + dy * dy > LONG_PRESS_MOVE_CANCEL_PX * LONG_PRESS_MOVE_CANCEL_PX) {
+      clearLongPressTimer();
+    }
+  }
+
+  function handleCardTouchEnd() {
+    if (armedJobIdRef.current) return;
+    clearLongPressTimer();
+  }
 
   const byStatus = useMemo(() => {
     const map = {};
@@ -105,12 +287,13 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
   }
 
   return (
-    <div className="board-view">
+    <div className={`board-view${touchArmedJobId ? ' board-view--touch-drag-active' : ''}`}>
       <div className="board-columns">
         {JOB_STATUSES.map((status) => (
           <div
             key={status}
-            className="board-column"
+            className={`board-column${touchOverColumnStatus === status ? ' board-column--touch-over' : ''}`}
+            data-board-status={status}
             onDragOver={(e) => handleDragOver(e, status)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, status)}
@@ -138,10 +321,14 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                 return (
                     <div
                       key={job.id}
-                      className="board-card"
+                      className={`board-card${touchArmedJobId === job.id ? ' board-card--touch-armed' : ''}`}
                       draggable={job.status !== 'Paid'}
                       onDragStart={(e) => handleDragStart(e, job)}
                       onDragEnd={handleDragEnd}
+                      onTouchStart={(e) => handleCardTouchStart(e, job)}
+                      onTouchMove={handleCardTouchMove}
+                      onTouchEnd={handleCardTouchEnd}
+                      onTouchCancel={handleCardTouchEnd}
                     >
                     <div className="board-card-actions">
                       <Link

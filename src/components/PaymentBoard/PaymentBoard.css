@@ -107,6 +107,11 @@
   opacity: 0.8;
 }
 
+.board-view--touch-drag-active {
+  position: relative;
+  z-index: 55;
+}
+
 .board-card {
   position: relative;
   background: var(--color-surface);
@@ -114,9 +119,22 @@
   padding: 0.75rem 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   cursor: grab;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.15s, transform 0.15s;
   border: 1px solid var(--color-border);
-  touch-action: none;
+  touch-action: manipulation;
+}
+
+.board-card--touch-armed {
+  z-index: 6;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  transform: scale(1.02);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.board-column--touch-over:not(.board-column--drag-over) {
+  background: var(--color-border);
+  box-shadow: inset 0 0 0 2px var(--color-primary);
 }
 
 .board-card[draggable="false"] {
