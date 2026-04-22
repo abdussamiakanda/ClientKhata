@@ -231,11 +231,11 @@ export function SendInvoiceModal({
     `;
 
     try {
-      const response = await fetch(import.meta.env.VITE_EMAIL_API_URL, {
+      const response = await fetch(import.meta.env.VITE_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_EMAIL_API_KEY,
+          "x-api-key": import.meta.env.VITE_API_KEY,
         },
         body: JSON.stringify({
           to: client.email,
@@ -246,11 +246,6 @@ export function SendInvoiceModal({
       });
 
       const data = await response.json().catch(() => ({}));
-      console.log("Email API Response:", {
-        status: response.status,
-        ok: response.ok,
-        data,
-      });
 
       if (!response.ok || data.status === "error" || data.status >= 400) {
         throw new Error(data.message || data.details || "Failed to send email");

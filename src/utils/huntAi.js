@@ -1,7 +1,3 @@
-const DEFAULT_BASE_URL = 'http://localhost:11434';
-const DEFAULT_OLLAMA_PATH = '/api/chat';
-const DEFAULT_MODEL = 'gemma4';
-
 const DRAFT_TYPES = {
   email: 'Email',
   cover_letter: 'Cover Letter',
@@ -9,11 +5,11 @@ const DRAFT_TYPES = {
 };
 
 export function getHuntConfigError() {
-  if (!import.meta.env.VITE_HUNT_AI_API_KEY) {
-    return 'Hunt AI is not configured. Set VITE_HUNT_AI_API_KEY in your .env file.';
+  if (!import.meta.env.VITE_API_URL) {
+    return 'Hunt is not configured. Set VITE_API_URL in your .env file.';
   }
-  if (!import.meta.env.VITE_HUNT_AI_BASE_URL) {
-    return 'Hunt AI base URL is not configured. Set VITE_HUNT_AI_BASE_URL in your .env file.';
+  if (!import.meta.env.VITE_API_KEY) {
+    return 'Hunt is not configured. Set VITE_API_KEY in your .env file.';
   }
   return '';
 }
@@ -92,21 +88,56 @@ function normalizeInsights(parsed, fallbackDraftType) {
   };
 }
 
-export async function generateHuntInsights(postText) {
-  const apiKey = import.meta.env.VITE_HUNT_AI_API_KEY;
-  const baseUrl = import.meta.env.VITE_HUNT_AI_BASE_URL || DEFAULT_BASE_URL;
-  const endpointPath = import.meta.env.VITE_HUNT_AI_ENDPOINT_PATH || DEFAULT_OLLAMA_PATH;
-  const normalizedPath = endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`;
-  const endpoint = import.meta.env.DEV
-    ? `/api/hunt-ai${normalizedPath}`
-    : `${baseUrl.replace(/\/$/, '')}${normalizedPath}`;
-  const model = import.meta.env.VITE_HUNT_AI_MODEL || DEFAULT_MODEL;
-  const requestStyle = import.meta.env.VITE_HUNT_AI_REQUEST_STYLE || (endpointPath.includes('/api/chat') ? 'ollama' : 'openai');
-
-  if (!apiKey) {
-    throw new Error('Missing VITE_HUNT_AI_API_KEY');
+/**
+ * Unwrap email API JSON into the Hunt insight object (summary, suggestions, draftType, draftText).
+ */
+function insightsFromApiPayload(data, fallbackDraftType) {
+  let root = data;
+  if (Array.isArray(root) && root[0]?.json) {
+    root = root[0].json;
+  }
+  if (root?.json && typeof root.json === 'object' && !root.summary) {
+    root = root.json;
   }
 
+  if (root?.status === 'error' || (typeof root?.status === 'number' && root.status >= 400)) {
+    throw new Error(String(root.message || root.details || 'API returned an error'));
+  }
+
+  if (root?.data && typeof root.data === 'object' && root.data.summary) {
+    root = root.data;
+  }
+
+  if (root?.summary && root?.draftText && Array.isArray(root?.suggestions)) {
+    return normalizeInsights(root, fallbackDraftType);
+  }
+
+  const nestedString =
+    (typeof root?.output === 'string' && root.output) ||
+    (typeof root?.text === 'string' && root.text) ||
+    (typeof root?.response === 'string' && root.response && !root.message);
+  if (nestedString) {
+    return normalizeInsights(extractJson(nestedString), fallbackDraftType);
+  }
+
+  const raw =
+    root?.choices?.[0]?.message?.content ||
+    root?.message?.content ||
+    (typeof root?.response === 'string' ? root.response : null);
+  if (raw) {
+    return normalizeInsights(extractJson(String(raw)), fallbackDraftType);
+  }
+
+  if (root?.response && typeof root.response === 'object' && root.response.summary) {
+    return normalizeInsights(root.response, fallbackDraftType);
+  }
+
+  throw new Error(
+    'Hunt API response was not recognized. Return JSON with keys summary, suggestions, draftType, draftText (or Ollama message.content with that JSON inside).'
+  );
+}
+
+export async function generateHuntInsights(postText) {
   const content = String(postText || '').trim();
   if (content.length < 40) {
     throw new Error('Please provide more job post details');
@@ -115,50 +146,37 @@ export async function generateHuntInsights(postText) {
   const draftType = detectDraftType(content);
   const prompt = buildPrompt(content, draftType);
 
-  const body =
-    requestStyle === 'ollama'
-      ? {
-          model,
-          stream: false,
-          format: 'json',
-          messages: [
-            { role: 'system', content: 'You are a precise assistant.' },
-            { role: 'user', content: prompt },
-          ],
-        }
-      : {
-          model,
-          temperature: 0.4,
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: 'You are a precise assistant.' },
-            { role: 'user', content: prompt },
-          ],
-        };
+  const url = import.meta.env.VITE_API_URL;
+  const apiKey = import.meta.env.VITE_API_KEY;
+  if (!url || !apiKey) {
+    throw new Error('Missing VITE_API_URL or VITE_API_KEY');
+  }
 
-  const res = await fetch(endpoint, {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      kind: 'hunt_insights',
+      jobPost: content,
+      prompt,
+      draftType,
+    }),
   });
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`AI request failed (${res.status}): ${errorText.slice(0, 180)}`);
+  const responseText = await res.text();
+  let data;
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    throw new Error(`Hunt API response was not valid JSON: ${responseText.slice(0, 120)}`);
   }
 
-  const data = await res.json();
-  const raw =
-    data?.choices?.[0]?.message?.content ||
-    data?.message?.content ||
-    data?.response;
-  if (!raw) {
-    throw new Error('AI returned an empty response');
+  if (!res.ok || data.status === 'error' || (typeof data.status === 'number' && data.status >= 400)) {
+    throw new Error(data.message || data.details || `Hunt request failed (${res.status})`);
   }
 
-  const parsed = extractJson(raw);
-  return normalizeInsights(parsed, draftType);
+  return insightsFromApiPayload(data, draftType);
 }

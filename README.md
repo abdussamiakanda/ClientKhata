@@ -77,7 +77,7 @@ npm install
 
 ### 3. Environment variables
 
-Copy `.env.example` to `.env` and set your Firebase config:
+Copy `.env.example` to `.env` and set your Firebase config. **Keep `.env` out of git** (it is listed in `.gitignore`). Use only placeholders in docs, issues, or screenshots—never real API keys or webhook secrets.
 
 ```env
 VITE_FIREBASE_API_KEY=...
@@ -86,16 +86,11 @@ VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_STORAGE_BUCKET=...appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
-VITE_HUNT_AI_API_KEY=...
-VITE_HUNT_AI_BASE_URL=http://localhost:11434
-VITE_HUNT_AI_ENDPOINT_PATH=/api/chat
-VITE_HUNT_AI_MODEL=gemma4
-VITE_HUNT_AI_REQUEST_STYLE=ollama
+VITE_API_URL=...
+VITE_API_KEY=...
 ```
 
-For Hunt V1, API calls are made directly from the frontend. If `VITE_HUNT_AI_API_KEY` or `VITE_HUNT_AI_BASE_URL` is missing, the Hunt page will show a setup warning and disable generation.
-
-In local development (`npm run dev`), Hunt requests are proxied through Vite at `/api/hunt-ai/*` to avoid browser CORS preflight failures when your AI server does not return CORS headers.
+See `.env.example` for the same list. **Hunt** and invoice email both POST to the URL in `VITE_API_URL` with the same `x-api-key` header (value from `VITE_API_KEY` in `.env` only). Hunt sends **`kind`**, **`jobPost`**, **`prompt`**, **`draftType`**. Invoice payloads use `to` / `subject` / `message`. Ensure your host allows CORS from your app origin if the browser reports blocked requests.
 
 ### 4. Firestore indexes (if required)
 
@@ -141,6 +136,8 @@ Open the URL shown (e.g. http://localhost:5173). Sign in with Google, add client
    npm run deploy
    ```
 
+   This deploys **Firebase Hosting** only (static `dist/` + SPA rewrite).
+
    Or step by step:
 
    ```bash
@@ -155,4 +152,4 @@ Open the URL shown (e.g. http://localhost:5173). Sign in with Google, add client
 - `npm run dev` – start dev server
 - `npm run build` – production build
 - `npm run preview` – preview production build
-- `npm run deploy` – build and deploy to Firebase Hosting
+- `npm run deploy` – build and deploy **Firebase Hosting**
