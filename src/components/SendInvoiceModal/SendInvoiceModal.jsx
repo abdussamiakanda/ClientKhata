@@ -3,6 +3,7 @@ import { X, Send, Mail } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { formatAmount } from "../../utils/format";
 import { getGlobalEncryptionKey, deriveInvoiceKey } from "../../utils/encryption";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 import "./SendInvoiceModal.css";
 
 export function SendInvoiceModal({
@@ -15,6 +16,9 @@ export function SendInvoiceModal({
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  
+  useLockBodyScroll();
+
   const [customMessage, setCustomMessage] = useState(
     "Thank you for your business!",
   );

@@ -47,13 +47,14 @@
   }
 
   .confirm-modal-footer {
-    flex-direction: column;
+    flex-direction: row;
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
     gap: 0.5rem;
   }
 
   .confirm-modal-footer .btn {
-    width: 100%;
+    width: auto;
+    flex: 1;
     min-height: 44px;
     justify-content: center;
   }

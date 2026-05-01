@@ -150,7 +150,7 @@ export function JobsPage() {
           </div>
           <button type="button" className="btn btn-primary" onClick={handleAdd}>
             <Plus size={18} />
-            Add Job
+            Add <span className="hide-on-mobile">Job</span>
           </button>
         </div>
       </div>

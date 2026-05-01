@@ -30,6 +30,7 @@
  * @property {string} [imageBase64] - Base64 data URL (e.g. data:image/jpeg;base64,...)
  * @property {boolean} [active] - If false, hidden from Add job dropdown. Default true.
  * @property {string} [userId]
+ * @property {string} [timezone] - The client's timezone
  * @property {import('firebase/firestore').Timestamp} [createdAt]
  */
 
@@ -57,5 +58,6 @@ export function createClientData(data) {
     active,
     ...(data.imageBase64 != null && data.imageBase64 !== '' && { imageBase64: data.imageBase64 }),
     ...(data.userId != null && data.userId !== '' && { userId: data.userId }),
+    ...(data.timezone != null && data.timezone !== '' && { timezone: data.timezone }),
   };
 }

@@ -1,17 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { subscribePayments, updatePayment } from '../../firebase/payments';
+import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { subscribePayments, updatePayment } from "../../firebase/payments";
 import {
   subscribePaymentRecords,
   addPaymentRecord,
   deletePaymentRecord,
-} from '../../firebase/paymentRecords';
-import { formatAmount, formatTimestamp } from '../../utils/format';
-import { getStatusBadgeClass } from '../../utils/format';
-import { ConfirmModal } from '../ConfirmModal';
-import { Banknote, Plus, Trash2, X } from 'lucide-react';
-import { PageLoader } from '../PageLoader/PageLoader';
-import './PaymentsPage.css';
+} from "../../firebase/paymentRecords";
+import { formatAmount, formatTimestamp } from "../../utils/format";
+import { getStatusBadgeClass } from "../../utils/format";
+import { ConfirmModal } from "../ConfirmModal";
+import { Banknote, Plus, Trash2, X } from "lucide-react";
+import { PageLoader } from "../PageLoader/PageLoader";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
+import "./PaymentsPage.css";
 
 export function PaymentsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -21,9 +22,11 @@ export function PaymentsPage() {
   const [busyId, setBusyId] = useState(null);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ jobId: '', amount: '', note: '' });
-  const [addError, setAddError] = useState('');
+  const [addForm, setAddForm] = useState({ jobId: "", amount: "", note: "" });
+  const [addError, setAddError] = useState("");
   const [removeRecord, setRemoveRecord] = useState(null);
+
+  useLockBodyScroll(addModalOpen);
 
   useEffect(() => {
     if (authLoading || !user?.uid) return;
@@ -54,7 +57,11 @@ export function PaymentsPage() {
       if (!map[r.jobId]) map[r.jobId] = [];
       map[r.jobId].push(r);
     });
-    Object.keys(map).forEach((id) => map[id].sort((a, b) => (b.paidAt?.toMillis?.() ?? 0) - (a.paidAt?.toMillis?.() ?? 0)));
+    Object.keys(map).forEach((id) =>
+      map[id].sort(
+        (a, b) => (b.paidAt?.toMillis?.() ?? 0) - (a.paidAt?.toMillis?.() ?? 0),
+      ),
+    );
     return map;
   }, [records]);
 
@@ -86,30 +93,32 @@ export function PaymentsPage() {
 
   const handleAddPayment = async (e) => {
     e.preventDefault();
-    setAddError('');
+    setAddError("");
     const jobId = addForm.jobId.trim();
     const amount = parseFloat(addForm.amount);
     if (!jobId) {
-      setAddError('Select a job.');
+      setAddError("Select a job.");
       return;
     }
     if (!Number.isFinite(amount) || amount <= 0) {
-      setAddError('Enter a valid amount.');
+      setAddError("Enter a valid amount.");
       return;
     }
     const job = jobs.find((j) => j.id === jobId);
     if (!job) {
-      setAddError('Job not found.');
+      setAddError("Job not found.");
       return;
     }
     const currentTotal = getTotalPaid(jobId);
     const remaining = getRemaining(job);
     if (amount > remaining) {
-      const curr = job.currency ?? 'BDT';
-      setAddError(`Remaining is ${formatAmount(remaining, curr)}. Enter up to that amount.`);
+      const curr = job.currency ?? "BDT";
+      setAddError(
+        `Remaining is ${formatAmount(remaining, curr)}. Enter up to that amount.`,
+      );
       return;
     }
-    setBusyId('add');
+    setBusyId("add");
     try {
       await addPaymentRecord(
         jobId,
@@ -118,12 +127,12 @@ export function PaymentsPage() {
         user?.uid,
         Number(job.amount),
         currentTotal,
-        job.status || 'Delivered'
+        job.status || "Delivered",
       );
-      setAddForm({ jobId: '', amount: '', note: '' });
+      setAddForm({ jobId: "", amount: "", note: "" });
       setAddModalOpen(false);
     } catch (err) {
-      setAddError(err.message || 'Failed to add payment');
+      setAddError(err.message || "Failed to add payment");
     } finally {
       setBusyId(null);
     }
@@ -136,12 +145,12 @@ export function PaymentsPage() {
       await deletePaymentRecord(record.id);
       const newTotal = getTotalPaid(job.id) - Number(record.amount);
       const noLongerPaidInFull = newTotal < Number(job.amount);
-      if (noLongerPaidInFull && job.status === 'Paid') {
-        await updatePayment(job.id, { status: 'Delivered' });
+      if (noLongerPaidInFull && job.status === "Paid") {
+        await updatePayment(job.id, { status: "Delivered" });
       }
       setRemoveRecord(null);
     } catch (err) {
-      alert(err.message || 'Failed to remove payment');
+      alert(err.message || "Failed to remove payment");
     } finally {
       setBusyId(null);
     }
@@ -155,14 +164,18 @@ export function PaymentsPage() {
           type="button"
           className="btn btn-primary"
           onClick={() => {
-            setAddForm({ jobId: unpaidJobs[0]?.id || '', amount: '', note: '' });
-            setAddError('');
+            setAddForm({
+              jobId: unpaidJobs[0]?.id || "",
+              amount: "",
+              note: "",
+            });
+            setAddError("");
             setAddModalOpen(true);
           }}
           disabled={unpaidJobs.length === 0}
         >
           <Plus size={18} />
-          Add payment
+          Add <span className="hide-on-mobile">payment</span>
         </button>
       </div>
 
@@ -171,7 +184,11 @@ export function PaymentsPage() {
           <PageLoader />
         ) : jobs.length === 0 ? (
           <div className="payments-empty">
-            <Banknote size={48} className="payments-empty__icon" aria-hidden="true" />
+            <Banknote
+              size={48}
+              className="payments-empty__icon"
+              aria-hidden="true"
+            />
             <p>No payments yet. Add jobs first, then record payments here.</p>
           </div>
         ) : (
@@ -188,10 +205,19 @@ export function PaymentsPage() {
                       <li key={job.id} className="payments-job-card">
                         <div className="payments-job-card__head">
                           <div className="payments-job-card__info">
-                            <span className="payments-job-card__client">{job.clientName || '—'}</span>
-                            <span className="payments-job-card__desc">{job.workDescription || '—'}</span>
+                            <span className="payments-job-card__client">
+                              {job.clientName || "—"}
+                            </span>
+                            <span className="payments-job-card__desc">
+                              {job.workDescription || "—"}
+                            </span>
                             <span className="payments-job-card__meta">
-                              Total {formatAmount(job.amount, job.currency ?? 'BDT')} · Paid {formatAmount(totalPaid, job.currency ?? 'BDT')} · Remaining {formatAmount(remaining, job.currency ?? 'BDT')}
+                              Total{" "}
+                              {formatAmount(job.amount, job.currency ?? "BDT")}{" "}
+                              · Paid{" "}
+                              {formatAmount(totalPaid, job.currency ?? "BDT")} ·
+                              Remaining{" "}
+                              {formatAmount(remaining, job.currency ?? "BDT")}
                             </span>
                           </div>
                           <button
@@ -201,12 +227,12 @@ export function PaymentsPage() {
                               setAddForm({
                                 jobId: job.id,
                                 amount: String(remaining),
-                                note: '',
+                                note: "",
                               });
-                              setAddError('');
+                              setAddError("");
                               setAddModalOpen(true);
                             }}
-                            disabled={busyId === 'add'}
+                            disabled={busyId === "add"}
                           >
                             <Plus size={14} />
                             Add payment
@@ -216,13 +242,26 @@ export function PaymentsPage() {
                           <ul className="payments-record-list">
                             {jobRecords.map((r) => (
                               <li key={r.id} className="payments-record-item">
-                                <span className="payments-record-amount">{formatAmount(r.amount, job.currency ?? 'BDT')}</span>
-                                <span className="payments-record-date">{formatTimestamp(r.paidAt, { short: true })}</span>
-                                {r.note && <span className="payments-record-note">{r.note}</span>}
+                                <span className="payments-record-amount">
+                                  {formatAmount(
+                                    r.amount,
+                                    job.currency ?? "BDT",
+                                  )}
+                                </span>
+                                <span className="payments-record-date">
+                                  {formatTimestamp(r.paidAt, { short: true })}
+                                </span>
+                                {r.note && (
+                                  <span className="payments-record-note">
+                                    {r.note}
+                                  </span>
+                                )}
                                 <button
                                   type="button"
                                   className="btn btn-icon btn-small btn-danger"
-                                  onClick={() => setRemoveRecord({ record: r, job })}
+                                  onClick={() =>
+                                    setRemoveRecord({ record: r, job })
+                                  }
                                   disabled={busyId !== null}
                                   aria-label="Remove payment"
                                 >
@@ -247,15 +286,27 @@ export function PaymentsPage() {
                     const totalPaid = getTotalPaid(job.id);
                     const jobRecords = recordsByJob[job.id] || [];
                     return (
-                      <li key={job.id} className="payments-job-card payments-job-card--paid">
+                      <li
+                        key={job.id}
+                        className="payments-job-card payments-job-card--paid"
+                      >
                         <div className="payments-job-card__head">
                           <div className="payments-job-card__info">
-                            <span className="payments-job-card__client">{job.clientName || '—'}</span>
-                            <span className="payments-job-card__desc">{job.workDescription || '—'}</span>
-                            <span className="payments-job-card__meta">
-                              Total {formatAmount(job.amount, job.currency ?? 'BDT')} · Paid {formatAmount(totalPaid, job.currency ?? 'BDT')}
+                            <span className="payments-job-card__client">
+                              {job.clientName || "—"}
                             </span>
-                            <span className={`status-badge status-badge--small ${getStatusBadgeClass(job.status)}`}>
+                            <span className="payments-job-card__desc">
+                              {job.workDescription || "—"}
+                            </span>
+                            <span className="payments-job-card__meta">
+                              Total{" "}
+                              {formatAmount(job.amount, job.currency ?? "BDT")}{" "}
+                              · Paid{" "}
+                              {formatAmount(totalPaid, job.currency ?? "BDT")}
+                            </span>
+                            <span
+                              className={`status-badge status-badge--small ${getStatusBadgeClass(job.status)}`}
+                            >
                               {job.status}
                             </span>
                           </div>
@@ -263,13 +314,23 @@ export function PaymentsPage() {
                         <ul className="payments-record-list">
                           {jobRecords.map((r) => (
                             <li key={r.id} className="payments-record-item">
-                              <span className="payments-record-amount">{formatAmount(r.amount)}</span>
-                              <span className="payments-record-date">{formatTimestamp(r.paidAt, { short: true })}</span>
-                              {r.note && <span className="payments-record-note">{r.note}</span>}
+                              <span className="payments-record-amount">
+                                {formatAmount(r.amount)}
+                              </span>
+                              <span className="payments-record-date">
+                                {formatTimestamp(r.paidAt, { short: true })}
+                              </span>
+                              {r.note && (
+                                <span className="payments-record-note">
+                                  {r.note}
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 className="btn btn-icon btn-small btn-danger"
-                                onClick={() => setRemoveRecord({ record: r, job })}
+                                onClick={() =>
+                                  setRemoveRecord({ record: r, job })
+                                }
                                 disabled={busyId !== null}
                                 aria-label="Remove payment"
                               >
@@ -290,7 +351,11 @@ export function PaymentsPage() {
 
       {/* Add payment modal */}
       {addModalOpen && (
-        <div className="modal-overlay" onClick={() => setAddModalOpen(false)} role="presentation">
+        <div
+          className="modal-overlay"
+          onClick={() => setAddModalOpen(false)}
+          role="presentation"
+        >
           <div
             className="modal-content payments-modal-content"
             onClick={(e) => e.stopPropagation()}
@@ -299,7 +364,9 @@ export function PaymentsPage() {
             aria-labelledby="add-payment-title"
           >
             <div className="modal-header">
-              <h2 id="add-payment-title" className="modal-title">Add payment</h2>
+              <h2 id="add-payment-title" className="modal-title">
+                Add payment
+              </h2>
               <button
                 type="button"
                 className="modal-close"
@@ -321,7 +388,7 @@ export function PaymentsPage() {
                     setAddForm((p) => ({
                       ...p,
                       jobId: id,
-                      amount: job ? String(getRemaining(job)) : '',
+                      amount: job ? String(getRemaining(job)) : "",
                     }));
                   }}
                   className="form-input"
@@ -332,7 +399,8 @@ export function PaymentsPage() {
                     const rem = getRemaining(job);
                     return (
                       <option key={job.id} value={job.id}>
-                        {job.clientName} – {job.workDescription} (remaining {formatAmount(rem, job.currency ?? 'BDT')})
+                        {job.clientName} – {job.workDescription} (remaining{" "}
+                        {formatAmount(rem, job.currency ?? "BDT")})
                       </option>
                     );
                   })}
@@ -340,17 +408,20 @@ export function PaymentsPage() {
               </label>
               <label className="form-label">
                 Amount *
-                {addForm.jobId && (() => {
-                  const job = jobs.find((j) => j.id === addForm.jobId);
-                  const curr = job?.currency ?? 'BDT';
-                  return <span className="form-hint">In {curr}</span>;
-                })()}
+                {addForm.jobId &&
+                  (() => {
+                    const job = jobs.find((j) => j.id === addForm.jobId);
+                    const curr = job?.currency ?? "BDT";
+                    return <span className="form-hint">In {curr}</span>;
+                  })()}
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={addForm.amount}
-                  onChange={(e) => setAddForm((p) => ({ ...p, amount: e.target.value }))}
+                  onChange={(e) =>
+                    setAddForm((p) => ({ ...p, amount: e.target.value }))
+                  }
                   className="form-input"
                   placeholder="0"
                   required
@@ -361,17 +432,27 @@ export function PaymentsPage() {
                 <input
                   type="text"
                   value={addForm.note}
-                  onChange={(e) => setAddForm((p) => ({ ...p, note: e.target.value }))}
+                  onChange={(e) =>
+                    setAddForm((p) => ({ ...p, note: e.target.value }))
+                  }
                   className="form-input"
                   placeholder="Optional"
                 />
               </label>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setAddModalOpen(false)}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setAddModalOpen(false)}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={busyId === 'add'}>
-                  {busyId === 'add' ? 'Adding…' : 'Add payment'}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={busyId === "add"}
+                >
+                  {busyId === "add" ? "Adding…" : "Add payment"}
                 </button>
               </div>
             </form>
@@ -384,13 +465,16 @@ export function PaymentsPage() {
         title="Remove payment?"
         message={
           removeRecord
-            ? `Remove ${formatAmount(removeRecord.record.amount, removeRecord.job.currency ?? 'BDT')} from "${removeRecord.job.workDescription}"?${removeRecord.job.status === 'Paid' ? ' Job will move back to Delivered.' : ''}`
-            : ''
+            ? `Remove ${formatAmount(removeRecord.record.amount, removeRecord.job.currency ?? "BDT")} from "${removeRecord.job.workDescription}"?${removeRecord.job.status === "Paid" ? " Job will move back to Delivered." : ""}`
+            : ""
         }
         confirmLabel="Remove"
         cancelLabel="Cancel"
         variant="danger"
-        onConfirm={() => removeRecord && handleDeleteRecord(removeRecord.record, removeRecord.job)}
+        onConfirm={() =>
+          removeRecord &&
+          handleDeleteRecord(removeRecord.record, removeRecord.job)
+        }
         onClose={() => setRemoveRecord(null)}
       />
     </div>

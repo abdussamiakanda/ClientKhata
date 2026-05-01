@@ -23,6 +23,7 @@ import {
   Plus,
   Eye,
   Send,
+  Clock,
 } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
 import { resolveBackLink, navFromForNext } from '../../utils/navBack';
@@ -202,7 +203,7 @@ export function ClientDetailPage() {
       ) : (
         <>
           {/* Client info card */}
-          <section className="client-detail-card" aria-label="Client information">
+          <section className={`client-detail-card ${client.active === false ? 'client-detail-card--inactive' : ''}`} aria-label="Client information">
             <div className="client-detail-card__header">
               <div className="client-detail-card__avatar-wrap">
                 {client.imageBase64 ? (
@@ -255,6 +256,12 @@ export function ClientDetailPage() {
                 <p className="client-detail-card__row">
                   <MapPin size={16} />
                   <span>{client.address}</span>
+                </p>
+              )}
+              {client.timezone && (
+                <p className="client-detail-card__row">
+                  <Clock size={16} />
+                  <span>{client.timezone}</span>
                 </p>
               )}
               {client.notes && (

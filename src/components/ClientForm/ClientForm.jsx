@@ -1,23 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { addClient, updateClient } from '../../firebase/clients';
 import { compressImageToBase64 } from '../../utils/imageCompress';
 import { X, ImagePlus, Trash2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
 import './ClientForm.css';
 
-const INITIAL = {
-  clientName: '',
-  institution: '',
-  contactNumber: '',
-  email: '',
-  website: '',
-  address: '',
-  notes: '',
-  imageBase64: '',
-  active: true,
-};
-
 export function ClientForm({ userId, editingClient, onClose }) {
-  const [form, setForm] = useState(INITIAL);
+  const { profile } = useAuth();
+  
+  useLockBodyScroll();
+
+  const timezones = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf('timeZone');
+    } catch (e) {
+      return [Intl.DateTimeFormat().resolvedOptions().timeZone];
+    }
+  }, []);
+
+  const [form, setForm] = useState(() => ({
+    clientName: '',
+    institution: '',
+    contactNumber: '',
+    email: '',
+    website: '',
+    address: '',
+    notes: '',
+    imageBase64: '',
+    active: true,
+    timezone: profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [imageCompressing, setImageCompressing] = useState(false);
@@ -37,11 +50,23 @@ export function ClientForm({ userId, editingClient, onClose }) {
         notes: editingClient.notes || '',
         imageBase64: editingClient.imageBase64 || '',
         active: editingClient.active !== false,
+        timezone: editingClient.timezone || profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     } else {
-      setForm(INITIAL);
+      setForm({
+        clientName: '',
+        institution: '',
+        contactNumber: '',
+        email: '',
+        website: '',
+        address: '',
+        notes: '',
+        imageBase64: '',
+        active: true,
+        timezone: profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
     }
-  }, [editingClient]);
+  }, [editingClient, profile]);
 
   function update(field) {
     return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -88,6 +113,7 @@ export function ClientForm({ userId, editingClient, onClose }) {
         notes: form.notes.trim(),
         imageBase64: form.imageBase64 || '',
         active: form.active,
+        timezone: form.timezone || '',
       };
       if (isEdit) {
         await updateClient(editingClient.id, data);
@@ -203,7 +229,7 @@ export function ClientForm({ userId, editingClient, onClose }) {
                 placeholder="https://example.com"
               />
             </label>
-            <label className="form-label client-form__field--full">
+            <label className="form-label">
               Address
               <input
                 type="text"
@@ -212,6 +238,19 @@ export function ClientForm({ userId, editingClient, onClose }) {
                 className="form-input"
                 placeholder="Street, city, area"
               />
+            </label>
+            <label className="form-label">
+              Timezone
+              <select
+                value={form.timezone}
+                onChange={update('timezone')}
+                className="form-input"
+              >
+                <option value="">Select Timezone...</option>
+                {timezones.map(tz => (
+                  <option key={tz} value={tz}>{tz}</option>
+                ))}
+              </select>
             </label>
             <label className="form-label client-form__field--full">
               Notes

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { subscribeUserProfile } from '../firebase/profile';
+import { subscribeUserProfile, saveUserProfile } from '../firebase/profile';
 import { EncryptionPrompt } from '../components/EncryptionPrompt';
 import { setGlobalEncryptionKey, getCachedEncryptionKey, clearCachedEncryptionKey } from '../utils/encryption';
 
@@ -27,6 +27,13 @@ export function AuthProvider({ children }) {
         unsubProfile = subscribeUserProfile(firebaseUser.uid, (info) => {
           const profileData = info.exists ? { id: info.id, ...info.data } : null;
           setProfile(profileData);
+          
+          if (!info.fromCache) {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (!profileData || !profileData.timezone) {
+              saveUserProfile(firebaseUser.uid, { timezone: tz }).catch(console.error);
+            }
+          }
           
           if (profileData?.encryptionSetup) {
             const cachedKey = getCachedEncryptionKey(firebaseUser.uid);

@@ -61,6 +61,10 @@ button, input, textarea, select {
   .page-title {
     font-size: 1.25rem;
   }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
 }
 
 /* Shared buttons */

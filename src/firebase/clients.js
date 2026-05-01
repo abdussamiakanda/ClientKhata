@@ -60,7 +60,13 @@ export function subscribeClients(uid, onUpdate) {
         createdAt: data.createdAt,
       };
     });
-    clients.sort((a, b) => (a.clientName || '').localeCompare(b.clientName || ''));
+    clients.sort((a, b) => {
+      const aActive = a.active !== false;
+      const bActive = b.active !== false;
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      return (a.clientName || '').localeCompare(b.clientName || '');
+    });
     onUpdate(clients);
   });
 }
@@ -89,7 +95,7 @@ export async function addClient(createdBy, data) {
 export async function updateClient(clientId, data) {
   const ref = doc(db, CLIENTS_COLLECTION, clientId);
   const payload = {};
-  const keys = ['clientName', 'institution', 'contactNumber', 'email', 'website', 'address', 'notes', 'imageBase64', 'active'];
+  const keys = ['clientName', 'institution', 'contactNumber', 'email', 'website', 'address', 'notes', 'imageBase64', 'active', 'timezone'];
   keys.forEach((k) => {
     if (data[k] === undefined) return;
     if (k === 'imageBase64') {

@@ -10,7 +10,7 @@ import './PaymentBoard.css';
 const DRAG_TYPE = 'application/x-board-job';
 
 const LONG_PRESS_MS = 480;
-const LONG_PRESS_MOVE_CANCEL_PX = 14;
+const LONG_PRESS_MOVE_CANCEL_PX = 50;
 const VIEWPORT_EDGE_PX = 72;
 const EDGE_SCROLL_STEP = 16;
 
@@ -82,6 +82,11 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
     ? settings.paidColumnCutoffDays * 24 * 60 * 60 * 1000
     : 0;
 
+  const isTouchDevice = useMemo(() => {
+    return typeof window !== 'undefined' && 
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
   const [touchArmedJobId, setTouchArmedJobId] = useState(null);
   const [touchOverColumnStatus, setTouchOverColumnStatus] = useState(null);
 
@@ -131,10 +136,23 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
     }
   }, [detachDocumentTouch]);
 
+  useEffect(() => {
+    const onGlobalTouchMove = (e) => {
+      if (armedJobIdRef.current) {
+        e.preventDefault(); // This now successfully prevents scrolling on iOS!
+      }
+    };
+    // Must be attached before any touch starts so iOS doesn't ignore passive: false
+    document.addEventListener('touchmove', onGlobalTouchMove, { passive: false, capture: true });
+    return () => document.removeEventListener('touchmove', onGlobalTouchMove, { capture: true });
+  }, []);
+
   useEffect(() => () => {
     clearLongPressTimer();
     detachDocumentTouch();
   }, [clearLongPressTimer, detachDocumentTouch]);
+
+
 
   useEffect(() => {
     const main = getMainScrollEl();
@@ -158,15 +176,16 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
     setTouchArmedJobId(job.id);
 
     const onMove = (e) => {
-      const t = e.touches[0];
-      if (!t) return;
-      const { clientX, clientY } = t;
+      const clientX = e.touches ? e.touches[0]?.clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0]?.clientY : e.clientY;
+      if (clientX == null || clientY == null) return;
+      
       const h = window.visualViewport?.height ?? window.innerHeight;
       const inVerticalEdge = clientY < VIEWPORT_EDGE_PX || clientY > h - VIEWPORT_EDGE_PX;
       if (inVerticalEdge) {
         applyMainVerticalEdgeScroll(clientY);
       }
-      e.preventDefault();
+      // e.preventDefault() is now handled by the permanent global listener
 
       const col = resolveColumnStatusFromPoint(clientX, clientY);
       if (col !== touchOverColumnRef.current) {
@@ -322,20 +341,27 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                     <div
                       key={job.id}
                       className={`board-card${touchArmedJobId === job.id ? ' board-card--touch-armed' : ''}`}
-                      draggable={job.status !== 'Paid'}
+                      draggable={!isTouchDevice && job.status !== 'Paid'}
                       onDragStart={(e) => handleDragStart(e, job)}
                       onDragEnd={handleDragEnd}
-                      onTouchStart={(e) => handleCardTouchStart(e, job)}
-                      onTouchMove={handleCardTouchMove}
-                      onTouchEnd={handleCardTouchEnd}
-                      onTouchCancel={handleCardTouchEnd}
+                      onTouchStart={isTouchDevice ? undefined : (e) => handleCardTouchStart(e, job)}
+                      onTouchMove={isTouchDevice ? undefined : handleCardTouchMove}
+                      onTouchEnd={isTouchDevice ? undefined : handleCardTouchEnd}
+                      onTouchCancel={isTouchDevice ? undefined : handleCardTouchEnd}
+                      onContextMenu={(e) => {
+                        // Let mobile context menu work naturally since dragging is disabled
+                      }}
                     >
-                    <div className="board-card-actions">
+                    <div 
+                      className="board-card-actions"
+                      onClick={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
                       <Link
                         to={`/job/${job.id}`}
                         state={navFromForNext(location)}
                         className="board-card-action btn btn-icon"
-                        onClick={(e) => e.stopPropagation()}
                         aria-label="View"
                       >
                         <Eye size={16} />
@@ -343,7 +369,6 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                       <Link
                         to={`/invoice/${job.id}`}
                         className="board-card-action btn btn-icon"
-                        onClick={(e) => e.stopPropagation()}
                         aria-label="Invoice"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -353,7 +378,7 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                       <button
                         type="button"
                         className="board-card-action btn btn-icon"
-                        onClick={(e) => { e.stopPropagation(); onEdit(job); }}
+                        onClick={() => onEdit(job)}
                         aria-label="Edit"
                       >
                         <Pencil size={16} />
@@ -361,7 +386,7 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                       <button
                         type="button"
                         className="board-card-action board-card-action--danger btn btn-icon"
-                        onClick={(e) => { e.stopPropagation(); onDelete(job); }}
+                        onClick={() => onDelete(job)}
                         aria-label="Delete"
                       >
                         <Trash2 size={16} />

@@ -5,10 +5,26 @@ import { subscribeClients, deleteClient } from '../../firebase/clients';
 import { subscribePayments } from '../../firebase/payments';
 import { ClientForm } from '../ClientForm';
 import { ConfirmModal } from '../ConfirmModal';
-import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Eye } from 'lucide-react';
+import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Eye, Clock } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
 import { navFromForNext } from '../../utils/navBack';
 import './ClientsPage.css';
+
+function formatTimezoneInfo(tz) {
+  if (!tz) return 'Timezone not set';
+  try {
+    const timeString = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(new Date());
+    const tzName = tz.split('/').pop().replace(/_/g, ' ');
+    return `${timeString} — ${tzName}`;
+  } catch (e) {
+    return tz;
+  }
+}
 
 export function ClientsPage() {
   const location = useLocation();
@@ -115,7 +131,7 @@ export function ClientsPage() {
         <h1 className="page-title">Clients</h1>
         <button type="button" className="btn btn-primary" onClick={handleAdd}>
           <Plus size={18} />
-          Add Client
+          Add <span className="hide-on-mobile">client</span>
         </button>
       </div>
 
@@ -127,13 +143,13 @@ export function ClientsPage() {
             <p>No clients yet. Add your first client to get started.</p>
             <button type="button" className="btn btn-primary" onClick={handleAdd}>
               <Plus size={18} />
-              Add Client
+              Add <span className="hide-on-mobile">client</span>
             </button>
           </div>
         ) : (
           <ul className="clients-grid" aria-label="Clients">
             {clients.map((client) => (
-              <li key={client.id} className="client-card">
+              <li key={client.id} className={`client-card${client.active === false ? ' client-card--inactive' : ''}`}>
                 <div className="client-card__header">
                   <div className="client-card__avatar-wrap">
                     {client.imageBase64 ? (
@@ -149,7 +165,12 @@ export function ClientsPage() {
                     )}
                   </div>
                   <div className="client-card__header-info">
-                    <h3 className="client-card__name">{client.clientName}</h3>
+                    <div className="client-card__name-wrapper">
+                      <h3 className="client-card__name">{client.clientName}</h3>
+                      {client.active === false && (
+                        <span className="client-card__badge-inactive">Inactive</span>
+                      )}
+                    </div>
                     {client.institution && (
                       <p className="client-card__line client-card__line--institution">
                         <Building2 size={14} aria-hidden />
@@ -185,6 +206,12 @@ export function ClientsPage() {
                       <span>{client.address}</span>
                     </p>
                   )}
+                  {client.timezone && (
+                    <p className="client-card__line">
+                      <Clock size={14} aria-hidden />
+                      <span>{formatTimezoneInfo(client.timezone)}</span>
+                    </p>
+                  )}
                   {client.notes && (
                     <p className="client-card__line client-card__notes">
                       <FileText size={14} aria-hidden />
@@ -196,29 +223,29 @@ export function ClientsPage() {
                   <Link
                     to={`/client/${client.id}`}
                     state={navFromForNext(location)}
-                    className="btn btn-small btn-secondary client-card__btn-details"
+                    className="btn btn-small client-card__btn-details"
                     aria-label="View details"
                   >
-                    <Eye size={14} />
-                    Details
+                    <Eye size={16} />
+                    View Details
                   </Link>
                   <button
                     type="button"
-                    className="btn btn-small btn-secondary"
+                    className="client-card__btn-edit"
                     onClick={() => handleEdit(client)}
                     aria-label="Edit client"
+                    title="Edit client"
                   >
-                    <Pencil size={14} />
-                    Edit
+                    <Pencil size={15} />
                   </button>
                   <button
                     type="button"
-                    className="btn btn-small btn-danger"
+                    className="client-card__btn-delete"
                     onClick={() => handleDelete(client)}
                     aria-label="Delete client"
+                    title="Delete client"
                   >
-                    <Trash2 size={14} />
-                    Delete
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </li>

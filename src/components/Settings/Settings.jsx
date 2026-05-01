@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -32,7 +32,16 @@ export function Settings() {
     phone: '',
     email: '',
     address: '',
+    timezone: '',
   });
+  
+  const timezones = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf('timeZone');
+    } catch (e) {
+      return [Intl.DateTimeFormat().resolvedOptions().timeZone];
+    }
+  }, []);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState('');
 
@@ -51,6 +60,7 @@ export function Settings() {
         phone: profile.phone || '',
         email: profile.email || '',
         address: profile.address || '',
+        timezone: profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     }
   }, [profile]);
@@ -277,6 +287,20 @@ export function Settings() {
                 onChange={(e) => setProfileForm(p => ({ ...p, address: e.target.value }))}
                 placeholder="e.g. 123 Main St, City, Country"
               />
+            </div>
+            <div className="settings-form-group full-width">
+              <label htmlFor="pf-timezone" className="settings-card__label">Timezone</label>
+              <select
+                id="pf-timezone"
+                className="input"
+                value={profileForm.timezone}
+                onChange={(e) => setProfileForm(p => ({ ...p, timezone: e.target.value }))}
+              >
+                <option value="">Default (Browser)</option>
+                {timezones.map(tz => (
+                  <option key={tz} value={tz}>{tz}</option>
+                ))}
+              </select>
             </div>
           </div>
           

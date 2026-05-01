@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
 import './ConfirmModal.css';
 
 /**
@@ -23,6 +24,8 @@ export function ConfirmModal({
   onConfirm,
   onClose,
 }) {
+  useLockBodyScroll(isOpen);
+
   if (!isOpen) return null;
 
   const handleConfirm = () => {

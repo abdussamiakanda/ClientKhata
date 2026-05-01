@@ -12,6 +12,7 @@ import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { ArrowLeft, User, Pencil, Trash2, Calendar, DollarSign, FileText, CalendarPlus, PlayCircle, PackageCheck, CheckCircle, Plus, X } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
 import { resolveBackLink, navFromForNext } from '../../utils/navBack';
+import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
 import './JobDetailPage.css';
 
 const STATUS_LABELS = {
@@ -82,6 +83,8 @@ export function JobDetailPage() {
   const [addPaymentForm, setAddPaymentForm] = useState({ amount: '', note: '' });
   const [addPaymentError, setAddPaymentError] = useState('');
   const [addPaymentSaving, setAddPaymentSaving] = useState(false);
+  
+  useLockBodyScroll(addPaymentOpen);
 
   useEffect(() => {
     if (authLoading || !user?.uid) return;
@@ -473,7 +476,7 @@ export function JobDetailPage() {
                   onClick={openAddPayment}
                 >
                   <Plus size={18} />
-                  Add payment
+                  Add <span className="hide-on-mobile">payment</span>
                 </button>
               )}
             </div>

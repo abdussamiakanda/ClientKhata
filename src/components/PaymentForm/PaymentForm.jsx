@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { addPayment, updatePayment } from '../../firebase/payments';
 import { JOB_STATUSES, CURRENCIES } from '../../schema/paymentSchema';
 import { X } from 'lucide-react';
+import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
 import './PaymentForm.css';
 
 export function PaymentForm({ userId, clients, editingPayment, defaultClientId, fixedClientId, onClose }) {
+  useLockBodyScroll();
   const [clientId, setClientId] = useState('');
   const [workDescription, setWorkDescription] = useState('');
   const [notes, setNotes] = useState('');

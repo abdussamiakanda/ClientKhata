@@ -56,26 +56,52 @@
 
 .client-card__footer {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem 1rem;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-border-subtle);
-  align-items: center;
-}
-
-.client-card__footer .btn {
-  flex: 1;
-  min-width: 5rem;
-  justify-content: center;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border-subtle);
+  background: transparent;
+  align-items: stretch;
 }
 
 .client-card__btn-details {
-  border: 1px solid var(--color-text) !important;
+  flex: 1;
+  justify-content: center;
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+  border: none !important;
 }
 
 .client-card__btn-details:hover {
-  border-color: var(--color-text-muted) !important;
+  background: var(--color-primary);
+  color: var(--color-text-inverse) !important;
+}
+
+.client-card__btn-edit,
+.client-card__btn-delete {
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.client-card__btn-edit:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-primary-muted);
+}
+
+.client-card__btn-delete:hover {
+  color: var(--color-error);
+  border-color: var(--color-error);
+  background: rgba(220, 38, 38, 0.1);
 }
 
 .client-card__avatar-wrap {
@@ -103,8 +129,25 @@
   font-size: 1.5rem;
 }
 
-.client-card__name {
+.client-card--inactive {
+  opacity: 0.65;
+  filter: grayscale(0.4);
+}
+
+.client-card--inactive .client-card__name {
+  color: var(--color-text-muted);
+}
+
+.client-card__name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 0 0.25rem;
+  min-width: 0;
+}
+
+.client-card__name {
+  margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-text);
@@ -112,6 +155,18 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.client-card__badge-inactive {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
 .client-card__line--institution {
