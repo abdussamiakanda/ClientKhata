@@ -26,6 +26,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
+import { ClientTime } from '../ClientTime/ClientTime';
 import { resolveBackLink, navFromForNext } from '../../utils/navBack';
 import './ClientDetailPage.css';
 
@@ -261,7 +262,7 @@ export function ClientDetailPage() {
               {client.timezone && (
                 <p className="client-detail-card__row">
                   <Clock size={16} />
-                  <span>{client.timezone}</span>
+                  <ClientTime timezone={client.timezone} />
                 </p>
               )}
               {client.notes && (

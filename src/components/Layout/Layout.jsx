@@ -90,7 +90,6 @@ export function Layout() {
         </div>
 
         <nav className="app-sidebar__nav">
-          <div className="app-sidebar__nav-label">Main Menu</div>
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}

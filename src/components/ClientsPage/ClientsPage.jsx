@@ -10,21 +10,7 @@ import { PageLoader } from '../PageLoader/PageLoader';
 import { navFromForNext } from '../../utils/navBack';
 import './ClientsPage.css';
 
-function formatTimezoneInfo(tz) {
-  if (!tz) return 'Timezone not set';
-  try {
-    const timeString = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    }).format(new Date());
-    const tzName = tz.split('/').pop().replace(/_/g, ' ');
-    return `${timeString} — ${tzName}`;
-  } catch (e) {
-    return tz;
-  }
-}
+import { ClientTime } from '../ClientTime/ClientTime';
 
 export function ClientsPage() {
   const location = useLocation();
@@ -209,7 +195,7 @@ export function ClientsPage() {
                   {client.timezone && (
                     <p className="client-card__line">
                       <Clock size={14} aria-hidden />
-                      <span>{formatTimezoneInfo(client.timezone)}</span>
+                      <ClientTime timezone={client.timezone} />
                     </p>
                   )}
                   {client.notes && (

@@ -4,6 +4,7 @@ import { compressImageToBase64 } from '../../utils/imageCompress';
 import { X, ImagePlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
+import { SearchableSelect } from '../SearchableSelect/SearchableSelect';
 import './ClientForm.css';
 
 export function ClientForm({ userId, editingClient, onClose }) {
@@ -13,9 +14,29 @@ export function ClientForm({ userId, editingClient, onClose }) {
 
   const timezones = useMemo(() => {
     try {
-      return Intl.supportedValuesOf('timeZone');
+      const supported = Intl.supportedValuesOf('timeZone');
+      const now = new Date();
+      return supported.map(tz => {
+        try {
+          const tzString = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz,
+            timeZoneName: 'shortOffset'
+          }).format(now);
+          // e.g., "12:00 AM GMT+6" or "12:00 AM GMT"
+          const offsetMatch = tzString.match(/GMT([+-]\d{1,2}(:\d{2})?)?/);
+          const offset = offsetMatch ? offsetMatch[0] : 'GMT';
+          
+          return {
+            value: tz,
+            label: `(${offset}) ${tz.replace(/_/g, ' ')}`
+          };
+        } catch {
+          return { value: tz, label: tz.replace(/_/g, ' ') };
+        }
+      });
     } catch (e) {
-      return [Intl.DateTimeFormat().resolvedOptions().timeZone];
+      const fallback = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return [{ value: fallback, label: fallback }];
     }
   }, []);
 
@@ -241,16 +262,12 @@ export function ClientForm({ userId, editingClient, onClose }) {
             </label>
             <label className="form-label">
               Timezone
-              <select
+              <SearchableSelect
+                options={timezones}
                 value={form.timezone}
-                onChange={update('timezone')}
-                className="form-input"
-              >
-                <option value="">Select Timezone...</option>
-                {timezones.map(tz => (
-                  <option key={tz} value={tz}>{tz}</option>
-                ))}
-              </select>
+                onChange={(val) => setForm((prev) => ({ ...prev, timezone: val }))}
+                placeholder="Select Timezone..."
+              />
             </label>
             <label className="form-label client-form__field--full">
               Notes
