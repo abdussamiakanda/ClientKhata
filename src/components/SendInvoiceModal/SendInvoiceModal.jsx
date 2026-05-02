@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Send, Mail } from "lucide-react";
+import { X, Send, Mail, Download } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { formatAmount } from "../../utils/format";
 import { getGlobalEncryptionKey, deriveInvoiceKey } from "../../utils/encryption";
@@ -25,6 +25,12 @@ export function SendInvoiceModal({
   const { profile, user } = useAuth();
   const fallbackName =
     user?.displayName || user?.email?.split("@")[0] || "User";
+
+  const isMobile = useMemo(() => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  }, []);
 
   const jobs = useMemo(
     () => (initialJobs || []).filter((j) => j.status !== "Paid"),
@@ -58,21 +64,8 @@ export function SendInvoiceModal({
     }
   }
 
-  async function handleSendEmail() {
-    if (selectedJobIds.size === 0) return;
-
-    // Check missing email early
-    if (!client.email) {
-      setError("Cannot send: Client has no email address configured.");
-      return;
-    }
-
-    setIsSending(true);
-    setError(null);
-    setSuccessMsg(null);
-
+  function generateHtmlBody(isPdf = false) {
     const selectedJobs = jobs.filter((j) => selectedJobIds.has(j.id));
-    const subject = `Invoice${selectedJobs.length > 1 ? "s" : ""} from ${profile?.businessName || `${fallbackName}`}`;
     const currency = selectedJobs[0]?.currency ?? "BDT";
 
     const formattedDate = new Date().toLocaleDateString(undefined, {
@@ -94,8 +87,8 @@ export function SendInvoiceModal({
       itemsHtml += `
         <tr>
           <td class="td-pad" style="padding: 28px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top;">
-            <strong style="display: block; font-size: 18px; margin-bottom: 8px; color: #0f172a;">${desc}</strong>
-            <a href="${indUrl}" style="color: #64748b; font-size: 12px; text-decoration: underline;">View Individual Invoice</a>
+            <strong style="display: block; font-size: 18px; margin-bottom: ${isPdf ? '0' : '8px'}; color: #0f172a;">${desc}</strong>
+            ${!isPdf ? `<a href="${indUrl}" style="color: #64748b; font-size: 12px; text-decoration: underline;">View Individual Invoice</a>` : ''}
           </td>
           <td class="td-pad" style="padding: 28px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top; text-align: right; font-weight: 600; color: #000000;">
             ${amountStr} ${currency}
@@ -110,16 +103,18 @@ export function SendInvoiceModal({
     const balanceDue = Math.max(0, subtotal - totalPaid);
     const isPaidInFull = balanceDue === 0;
 
-    const jobIdsStr = selectedJobs.map((j) => j.id).join(",");
-    const url = `${window.location.origin}/invoice/${jobIdsStr}`;
-
-    const htmlBody = `
+    return `
       <!DOCTYPE html>
       <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Invoice - ${client.clientName}</title>
         <style>
+          @media print {
+            body { background-color: #ffffff !important; }
+            .main-container { box-shadow: none !important; padding: 0 !important; }
+          }
           @media only screen and (max-width: 600px) {
             .main-container { padding: 20px !important; }
             .header-title { font-size: 28px !important; }
@@ -220,11 +215,13 @@ export function SendInvoiceModal({
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b;">
                   This invoice was generated securely by <strong>ClientKhata</strong>.
                 </p>
+                ${!isPdf ? `
                 <p style="margin: 0; font-size: 12px;">
                   <a href="${window.location.origin}" style="color: #94a3b8; text-decoration: underline;">ClientKhata</a>
                   <span style="color: #cbd5e1; margin: 0 8px;">|</span>
                   <a href="mailto:${profile?.email || "stop"}?subject=Unsubscribe%20Request" style="color: #94a3b8; text-decoration: underline;">Unsubscribe</a>
                 </p>
+                ` : ''}
               </div>
             </div>
             
@@ -233,6 +230,43 @@ export function SendInvoiceModal({
       </body>
       </html>
     `;
+  }
+
+  function handleDownloadPDF() {
+    if (selectedJobIds.size === 0) return;
+    setError(null);
+
+    const htmlBody = generateHtmlBody(true);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlBody);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+    } else {
+      setError("Please allow popups to save the PDF.");
+    }
+  }
+
+  async function handleSendEmail() {
+    if (selectedJobIds.size === 0) return;
+
+    // Check missing email early
+    if (!client.email) {
+      setError("Cannot send: Client has no email address configured.");
+      return;
+    }
+
+    setIsSending(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    const selectedJobs = jobs.filter((j) => selectedJobIds.has(j.id));
+    const subject = `Invoice${selectedJobs.length > 1 ? "s" : ""} from ${profile?.businessName || `${fallbackName}`}`;
+    
+    const htmlBody = generateHtmlBody();
 
     try {
       const response = await fetch(import.meta.env.VITE_API_URL, {
@@ -353,20 +387,33 @@ export function SendInvoiceModal({
           >
             Cancel
           </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={
-              selectedJobIds.size === 0 ||
-              !client.email ||
-              isSending ||
-              !!successMsg
-            }
-            onClick={handleSendEmail}
-          >
-            <Send size={16} />
-            {isSending ? "Sending..." : "Send Invoice"}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {!isMobile && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={selectedJobIds.size === 0}
+                onClick={handleDownloadPDF}
+              >
+                <Download size={16} />
+                Save PDF
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={
+                selectedJobIds.size === 0 ||
+                !client.email ||
+                isSending ||
+                !!successMsg
+              }
+              onClick={handleSendEmail}
+            >
+              <Send size={16} />
+              {isSending ? "Sending..." : "Send Email"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
