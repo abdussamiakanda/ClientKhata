@@ -122,6 +122,36 @@ export function Dashboard() {
       if (p.isDelivered) deliveredCount += 1;
     });
 
+    // Add salary payment records to stats as paid amounts
+    const salaryRecords = records.filter((r) => r.isSalaryPayment);
+    salaryRecords.forEach((r) => {
+      if (dateRange !== 'all') {
+        const { start, end } = getRangeBounds(dateRange, customStartMs, customEndMs);
+        const paidMs = r.paidAt?.toMillis?.() ?? 0;
+        if (paidMs < start || paidMs > end) return;
+      }
+      const client = clients.find((c) => c.id === r.clientId);
+      const curr = client?.monthlySalaryCurrency ?? 'BDT';
+      if (!byCurrency[curr]) {
+        byCurrency[curr] = {
+          totalAmount: 0,
+          paidAmount: 0,
+          pendingAmount: 0,
+          ongoingAmount: 0,
+          outstandingAmount: 0,
+          paidCount: 0,
+          pendingCount: 0,
+          ongoingCount: 0,
+          outstandingCount: 0,
+        };
+      }
+      const salaryAmt = Number(r.amount) || 0;
+      byCurrency[curr].totalAmount += salaryAmt;
+      byCurrency[curr].paidAmount += salaryAmt;
+      byCurrency[curr].paidCount += 1;
+      paidCount += 1;
+    });
+
     const currencies = Object.keys(byCurrency).sort();
     return {
       byCurrency,
@@ -131,7 +161,7 @@ export function Dashboard() {
       paidCount,
       outstandingCount,
     };
-  }, [filteredPayments, totalPaidByJob]);
+  }, [filteredPayments, totalPaidByJob, records, clients, dateRange, customStartMs, customEndMs]);
 
   return (
     <div className="page dashboard-page">

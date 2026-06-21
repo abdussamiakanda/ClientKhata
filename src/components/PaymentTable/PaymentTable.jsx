@@ -148,7 +148,13 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
                   <td className="col-job">
                     {payment.workDescription || '—'}
                   </td>
-                  <td className="col-amount">{formatAmount(payment.amount, payment.currency ?? 'BDT')}</td>
+                  <td className="col-amount">
+                    {payment.isMonthlySalary ? (
+                      <span className="table-monthly-salary-badge">Salary</span>
+                    ) : (
+                      formatAmount(payment.amount, payment.currency ?? 'BDT')
+                    )}
+                  </td>
                   <td className="col-status">
                     <span className={`status-badge ${getStatusBadgeClass(payment.status)}`}>
                       {payment.status || '—'}
@@ -171,15 +177,24 @@ export function PaymentTable({ payments, onEdit, onDelete }) {
                     >
                       <Eye size={14} />
                     </Link>
-                    <Link
-                      to={`/invoice/${payment.id}`}
-                      className="btn btn-small btn-secondary btn-icon"
-                      aria-label="Invoice"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FileText size={14} />
-                    </Link>
+                    {payment.isMonthlySalary ? (
+                      <span
+                        className="btn btn-small btn-secondary btn-icon btn-disabled"
+                        aria-label="Invoice disabled"
+                      >
+                        <FileText size={14} />
+                      </span>
+                    ) : (
+                      <Link
+                        to={`/invoice/${payment.id}`}
+                        className="btn btn-small btn-secondary btn-icon"
+                        aria-label="Invoice"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FileText size={14} />
+                      </Link>
+                    )}
                     <button
                       type="button"
                       className="btn btn-small btn-secondary btn-icon"

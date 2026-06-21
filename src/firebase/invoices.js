@@ -25,10 +25,10 @@ export async function getPublicInvoice(jobId) {
  */
 export async function syncInvoiceData(jobId, userId, displayName, job, client, paymentRecords, profile) {
   if (!jobId || !userId || !job) return;
-  
+
   const totalPaid = (paymentRecords || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
   const balanceDue = Math.max(0, Number(job.amount || 0) - totalPaid);
-  
+
   const invoiceData = {
     userId,
     updatedAt: serverTimestamp()
@@ -56,6 +56,7 @@ export async function syncInvoiceData(jobId, userId, displayName, job, client, p
       workDescription: job.workDescription || 'Services rendered',
       notes: job.notes || '',
       amount: Number(job.amount || 0),
+      isMonthlySalary: Boolean(job.isMonthlySalary),
     },
     summary: {
       subtotal: Number(job.amount || 0),
@@ -75,7 +76,7 @@ export async function syncInvoiceData(jobId, userId, displayName, job, client, p
   } else {
     Object.assign(invoiceData, sensitivePayload);
   }
-  
+
   const ref = doc(db, INVOICES_COLLECTION, jobId);
   await setDoc(ref, invoiceData, { merge: true });
 }

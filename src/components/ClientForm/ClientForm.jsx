@@ -51,6 +51,8 @@ export function ClientForm({ userId, editingClient, onClose }) {
     imageBase64: '',
     active: true,
     timezone: profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    monthlySalary: '',
+    monthlySalaryCurrency: 'BDT',
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -72,6 +74,8 @@ export function ClientForm({ userId, editingClient, onClose }) {
         imageBase64: editingClient.imageBase64 || '',
         active: editingClient.active !== false,
         timezone: editingClient.timezone || profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        monthlySalary: editingClient.monthlySalary || '',
+        monthlySalaryCurrency: editingClient.monthlySalaryCurrency || 'BDT',
       });
     } else {
       setForm({
@@ -85,6 +89,8 @@ export function ClientForm({ userId, editingClient, onClose }) {
         imageBase64: '',
         active: true,
         timezone: profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        monthlySalary: '',
+        monthlySalaryCurrency: 'BDT',
       });
     }
   }, [editingClient, profile]);
@@ -135,6 +141,8 @@ export function ClientForm({ userId, editingClient, onClose }) {
         imageBase64: form.imageBase64 || '',
         active: form.active,
         timezone: form.timezone || '',
+        monthlySalary: form.monthlySalary ? Number(form.monthlySalary) : null,
+        monthlySalaryCurrency: form.monthlySalaryCurrency || 'BDT',
       };
       if (isEdit) {
         await updateClient(editingClient.id, data);
@@ -269,6 +277,39 @@ export function ClientForm({ userId, editingClient, onClose }) {
                 placeholder="Select Timezone..."
               />
             </label>
+            <div className="form-label client-form__field--full">
+              <label className="form-label">
+                Monthly Salary
+              </label>
+              <div className="form-amount-row">
+                <select
+                  value={form.monthlySalaryCurrency}
+                  onChange={(e) => setForm((prev) => ({ ...prev, monthlySalaryCurrency: e.target.value }))}
+                  className="form-input form-input--currency"
+                  aria-label="Currency"
+                >
+                  {[
+                    { code: 'BDT', symbol: '৳', label: 'BDT (৳)' },
+                    { code: 'USD', symbol: '$', label: 'USD ($)' },
+                    { code: 'EUR', symbol: '€', label: 'EUR (€)' },
+                  ].map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.monthlySalary}
+                  onChange={(e) => setForm((prev) => ({ ...prev, monthlySalary: e.target.value }))}
+                  className="form-input"
+                  placeholder="0"
+                />
+              </div>
+              <span className="form-hint">Optional monthly salary amount for this client</span>
+            </div>
             <label className="form-label client-form__field--full">
               Notes
               <textarea

@@ -24,6 +24,7 @@ import {
   Eye,
   Send,
   Clock,
+  DollarSign,
 } from 'lucide-react';
 import { PageLoader } from '../PageLoader/PageLoader';
 import { ClientTime } from '../ClientTime/ClientTime';
@@ -270,6 +271,15 @@ export function ClientDetailPage() {
                   <FileText size={16} />
                   <span>{client.notes}</span>
                 </p>
+              )}
+              {client.monthlySalary && (
+                <div className="client-detail-card__row">
+                  <DollarSign size={16} />
+                  <span>
+                    Monthly Salary: {formatAmount(client.monthlySalary, client.monthlySalaryCurrency || 'BDT')}
+                    {client.monthlySalaryCurrency && ` ${client.monthlySalaryCurrency}`}
+                  </span>
+                </div>
               )}
             </div>
           </section>

@@ -184,6 +184,22 @@
   line-height: 1.35;
 }
 
+.board-card-monthly {
+  margin-bottom: 0.5rem;
+}
+
+.board-card-monthly-badge {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .board-card-amount {
   display: inline-flex;
   align-items: center;
@@ -264,6 +280,12 @@
   background: var(--color-error-bg, #fef2f2);
   color: var(--color-error, #dc2626);
   border-color: var(--color-error, #dc2626);
+}
+
+.board-card-actions .board-card-action.btn-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 @media (max-width: 900px) {

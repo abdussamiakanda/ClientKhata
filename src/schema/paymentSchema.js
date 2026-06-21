@@ -19,6 +19,7 @@
  * - isDelivered: (boolean) Legacy; true when status is Delivered or Paid
  * - timestamp: (Firestore Timestamp) When the entry was created
  * - userId: (string) Owner of the record
+ * - isMonthlySalary: (boolean) If true, this job is for a monthly salary client
  */
 
 /** Job status flow: Pending → Ongoing → Delivered → Paid. Paid is final (not draggable). */
@@ -53,6 +54,7 @@ export const CURRENCIES = [
  * @property {boolean} [isDelivered] - Legacy; true when status is Delivered or Paid
  * @property {import('firebase/firestore').Timestamp} [timestamp]
  * @property {string} [userId]
+ * @property {boolean} [isMonthlySalary] - If true, this job is for a monthly salary client
  */
 
 /**
@@ -72,6 +74,7 @@ export function createPaymentData(data) {
     status,
     isDelivered: status === 'Delivered' || status === 'Paid',
     ...(data.userId && { userId: data.userId }),
+    ...(data.isMonthlySalary !== undefined && { isMonthlySalary: Boolean(data.isMonthlySalary) }),
   };
 }
 

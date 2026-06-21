@@ -4,6 +4,12 @@
   margin-bottom: 1.5rem;
 }
 
+.job-detail-page .btn-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .job-detail-not-found {
   text-align: center;
   padding: 4rem 2rem;

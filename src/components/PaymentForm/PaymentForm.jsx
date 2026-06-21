@@ -13,11 +13,13 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('BDT');
   const [status, setStatus] = useState('Pending');
+  const [isMonthlySalary, setIsMonthlySalary] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [selectedClient, setSelectedClient] = useState(null);
 
   const isEdit = Boolean(editingPayment?.id);
-  const selectedClient = clients?.find((c) => c.id === clientId);
+  const clientFromId = clients?.find((c) => c.id === clientId);
   const isClientLocked = Boolean(fixedClientId && !isEdit);
 
   const clientsForDropdown = useMemo(() => {
@@ -43,6 +45,7 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
       setAmount(editingPayment.amount != null ? String(editingPayment.amount) : '');
       setCurrency(CURRENCIES.some((c) => c.code === editingPayment.currency) ? editingPayment.currency : 'BDT');
       setStatus(JOB_STATUSES.includes(editingPayment.status) ? editingPayment.status : 'Pending');
+      setIsMonthlySalary(Boolean(editingPayment.isMonthlySalary));
     } else {
       setClientId(fixedClientId || defaultClientId || '');
       setWorkDescription('');
@@ -50,8 +53,35 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
       setAmount('');
       setCurrency('BDT');
       setStatus('Pending');
+      setIsMonthlySalary(false);
     }
   }, [editingPayment, defaultClientId, fixedClientId]);
+
+  useEffect(() => {
+    if (clients && clientId) {
+      const client = clients.find(c => c.id === clientId);
+      setSelectedClient(client);
+      // If client has monthly salary and this is a new job, automatically set as monthly salary job
+      if (client && client.monthlySalary && !editingPayment) {
+        setIsMonthlySalary(true);
+      }
+    } else {
+      setSelectedClient(null);
+    }
+  }, [clientId, clients, editingPayment]);
+
+  useEffect(() => {
+    if (clients && clientId) {
+      const client = clients.find(c => c.id === clientId);
+      setSelectedClient(client);
+      // If client has monthly salary, automatically set this to monthly salary job
+      if (client && client.monthlySalary && !editingPayment) {
+        setIsMonthlySalary(true);
+      }
+    } else {
+      setSelectedClient(null);
+    }
+  }, [clientId, clients, editingPayment]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -61,10 +91,14 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
       setError('Please select a client.');
       return;
     }
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount < 0) {
-      setError('Please enter a valid amount.');
-      return;
+    // Skip amount validation for monthly salary jobs
+    let numAmount;
+    if (!isMonthlySalary) {
+      numAmount = parseFloat(amount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        setError('Please enter a valid amount.');
+        return;
+      }
     }
     const clientForName = clients?.find((c) => c.id === effectiveClientId);
     const clientName = clientForName?.clientName ?? selectedClient?.clientName ?? editingPayment?.clientName ?? '';
@@ -76,9 +110,10 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
           clientName,
           workDescription: workDescription.trim(),
           notes: notes.trim(),
-          amount: numAmount,
-          currency,
+          amount: isMonthlySalary ? 0 : numAmount,
+          currency: isMonthlySalary ? 'BDT' : currency,
           status: JOB_STATUSES.includes(status) ? status : 'Pending',
+          isMonthlySalary,
         });
       } else {
         await addPayment(userId, {
@@ -86,8 +121,9 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
           clientName,
           workDescription: workDescription.trim(),
           notes: notes.trim(),
-          amount: numAmount,
-          currency,
+          amount: isMonthlySalary ? 0 : numAmount,
+          currency: isMonthlySalary ? 'BDT' : currency,
+          isMonthlySalary,
         });
       }
       onClose();
@@ -100,7 +136,7 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
 
   return (
     <div className="modal-overlay" onClick={onClose} role="presentation">
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog">
+      <div className={`modal-content ${isMonthlySalary ? 'monthly-salary-job' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog">
         <div className="modal-header">
           <h2 className="modal-title">{isEdit ? 'Edit Job' : 'Add Job'}</h2>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
@@ -146,6 +182,36 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
               placeholder="e.g. job title or short description"
             />
           </label>
+          {!isMonthlySalary && (
+            <label className="form-label">
+              Amount *
+              <div className="form-amount-row">
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="form-input form-input--currency"
+                  aria-label="Currency"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="form-input"
+                  required
+                  placeholder="0"
+                />
+              </div>
+            </label>
+          )}
+
           <label className="form-label">
             Notes
             <textarea
@@ -155,33 +221,6 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
               placeholder="Optional notes for this job"
               rows={3}
             />
-          </label>
-          <label className="form-label">
-            Amount *
-            <div className="form-amount-row">
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="form-input form-input--currency"
-                aria-label="Currency"
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="form-input"
-                required
-                placeholder="0"
-              />
-            </div>
           </label>
           <label className="form-label">
             Job status
@@ -201,6 +240,20 @@ export function PaymentForm({ userId, clients, editingPayment, defaultClientId, 
               <span className="form-hint">New jobs start as Pending. Change status on the board.</span>
             )}
           </label>
+          {clientFromId && clientFromId.monthlySalary && (
+            <label className="form-label form-check">
+              <input
+                type="checkbox"
+                checked={isMonthlySalary}
+                onChange={(e) => setIsMonthlySalary(e.target.checked)}
+                className="form-input"
+              />
+              <span>
+                Monthly Salary Job
+                <span className="form-hint">Check if this job is for a monthly salary client</span>
+              </span>
+            </label>
+          )}
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel

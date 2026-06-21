@@ -15,6 +15,11 @@
   gap: 0.5rem;
 }
 
+.payments-view-toggle-wrap {
+  display: flex;
+  margin-bottom: 1.25rem;
+}
+
 .payments-empty {
   text-align: center;
   padding: 3rem 1.5rem;
@@ -196,6 +201,45 @@
   font-weight: 500;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+/* Payment type toggle */
+.payments-toggle {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.payments-toggle__btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, box-shadow 0.15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.payments-toggle__btn:hover {
+  color: var(--color-text);
+}
+
+.payments-toggle__btn--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* Form row for month/year selects */
+.form-row--gap {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-row--gap select {
+  flex: 1;
 }
 
 /* Add payment modal */

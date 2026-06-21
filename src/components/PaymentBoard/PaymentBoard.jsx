@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { formatAmount } from '../../utils/format';
 import { JOB_STATUSES } from '../../schema/paymentSchema';
 import { useSettings } from '../../context/SettingsContext';
-import { Pencil, Trash2, PackageCheck, Clock, PlayCircle, CheckCircle, Eye, Inbox, FileText } from 'lucide-react';
+import { Pencil, Trash2, PackageCheck, Clock, PlayCircle, CheckCircle, Eye, Inbox, DollarSign, FileText } from 'lucide-react';
 import { navFromForNext } from '../../utils/navBack';
 import './PaymentBoard.css';
 
@@ -366,15 +366,24 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                       >
                         <Eye size={16} />
                       </Link>
-                      <Link
-                        to={`/invoice/${job.id}`}
-                        className="board-card-action btn btn-icon"
-                        aria-label="Invoice"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FileText size={16} />
-                      </Link>
+                      {job.isMonthlySalary ? (
+                        <span
+                          className="board-card-action btn btn-icon btn-disabled"
+                          aria-label="Invoice disabled"
+                        >
+                          <FileText size={16} />
+                        </span>
+                      ) : (
+                        <Link
+                          to={`/invoice/${job.id}`}
+                          className="board-card-action btn btn-icon"
+                          aria-label="Invoice"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <FileText size={16} />
+                        </Link>
+                      )}
                       <button
                         type="button"
                         className="board-card-action btn btn-icon"
@@ -395,25 +404,35 @@ export function PaymentBoard({ payments, totalPaidByJob = {}, onStatusChange, on
                     <div className="board-card-client">{job.clientName || '—'}</div>
                     <div className="board-card-job">{job.workDescription || '—'}</div>
                     <div className="board-card-amount">
-                      {job.status === 'Paid' ? (
+                      {job.isMonthlySalary && (
                         <>
-                          <CheckCircle size={14} />
-                          Paid in full
+                          <DollarSign size={14} />
+                          Monthly Salary
                         </>
-                      ) : totalPaid > 0 ? (
+                      )}
+                      {!job.isMonthlySalary && (
                         <>
-                          {job.status === 'Delivered' ? <PackageCheck size={14} /> : job.status === 'Ongoing' ? <PlayCircle size={14} /> : <Clock size={14} />}
-                          Paid {formatAmount(totalPaid, currency)} of {formatAmount(job.amount, currency)}
-                        </>
-                      ) : job.status === 'Ongoing' ? (
-                        <>
-                          <PlayCircle size={14} />
-                          {formatAmount(job.amount, currency)}
-                        </>
-                      ) : (
-                        <>
-                          <Clock size={14} />
-                          {formatAmount(job.amount, currency)}
+                          {job.status === 'Paid' ? (
+                            <>
+                              <CheckCircle size={14} />
+                              Paid in full
+                            </>
+                          ) : totalPaid > 0 ? (
+                            <>
+                              {job.status === 'Delivered' ? <PackageCheck size={14} /> : job.status === 'Ongoing' ? <PlayCircle size={14} /> : <Clock size={14} />}
+                              Paid {formatAmount(totalPaid, currency)} of {formatAmount(job.amount, currency)}
+                            </>
+                          ) : job.status === 'Ongoing' ? (
+                            <>
+                              <PlayCircle size={14} />
+                              {formatAmount(job.amount, currency)}
+                            </>
+                          ) : (
+                            <>
+                              <Clock size={14} />
+                              {formatAmount(job.amount, currency)}
+                            </>
+                          )}
                         </>
                       )}
                     </div>

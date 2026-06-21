@@ -192,6 +192,12 @@
   justify-content: center;
 }
 
+.col-actions .btn-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .table-empty {
   text-align: center;
   color: var(--color-text-muted);

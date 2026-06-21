@@ -336,10 +336,17 @@ export function JobDetailPage() {
                 </span>
               </div>
               <div className="job-detail-card__actions">
-                <Link to={`/invoice/${job.id}`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-                  <FileText size={16} />
-                  Invoice
-                </Link>
+                {job.isMonthlySalary ? (
+                  <span className="btn btn-secondary btn-disabled">
+                    <FileText size={16} />
+                    Invoice
+                  </span>
+                ) : (
+                  <Link to={`/invoice/${job.id}`} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+                    <FileText size={16} />
+                    Invoice
+                  </Link>
+                )}
                 <button type="button" className="btn btn-primary" onClick={handleEdit}>
                   <Pencil size={16} />
                   Edit

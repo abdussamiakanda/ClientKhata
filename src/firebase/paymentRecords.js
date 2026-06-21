@@ -105,6 +105,33 @@ export async function addPaymentRecord(jobId, amount, note, userId, jobAmount, c
 }
 
 /**
+ * Add a salary payment record for a client. Not linked to a specific job.
+ * @param {string} clientId
+ * @param {number} amount
+ * @param {number} salaryMonth - Month (1-12) the salary is for
+ * @param {number} salaryYear - Year the salary is for
+ * @param {string} [note]
+ * @param {string} [userId]
+ */
+export async function addSalaryPaymentRecord(clientId, amount, salaryMonth, salaryYear, note, userId) {
+  const payload = createPaymentRecordData({
+    amount,
+    note,
+    userId: userId || '',
+    isSalaryPayment: true,
+    clientId,
+    salaryMonth,
+    salaryYear,
+  });
+  const encryptedPayload = encryptRecordPayload(payload);
+  const ref = await addDoc(collection(db, PAYMENT_RECORDS_COLLECTION), {
+    ...encryptedPayload,
+    paidAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+/**
  * Delete a payment record. Caller should update job status to Delivered if total < job amount.
  * @param {string} recordId
  */

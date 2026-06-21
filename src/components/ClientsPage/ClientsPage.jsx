@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 import { subscribeClients, deleteClient } from '../../firebase/clients';
 import { subscribePayments } from '../../firebase/payments';
+import { subscribePaymentRecords } from '../../firebase/paymentRecords';
 import { ClientForm } from '../ClientForm';
 import { ConfirmModal } from '../ConfirmModal';
 import { Building2, Phone, Mail, Globe, MapPin, FileText, Pencil, Trash2, Plus, Eye, Clock } from 'lucide-react';
@@ -17,6 +18,7 @@ export function ClientsPage() {
   const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [paymentRecords, setPaymentRecords] = useState([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
 
   useEffect(() => {
@@ -27,9 +29,11 @@ export function ClientsPage() {
       setClientsLoaded(true);
     });
     const unsubPayments = subscribePayments(uid, setPayments);
+    const unsubRecords = subscribePaymentRecords(uid, setPaymentRecords);
     return () => {
       unsubClients();
       unsubPayments();
+      unsubRecords();
     };
   }, [authLoading, user?.uid]);
 
@@ -87,9 +91,13 @@ export function ClientsPage() {
 
   async function handleDelete(client) {
     const jobCount = payments.filter((p) => p.clientId === client.id).length;
-    if (jobCount > 0) {
+    const salaryCount = paymentRecords.filter((r) => r.isSalaryPayment && r.clientId === client.id).length;
+    const hasBlockers = [];
+    if (jobCount > 0) hasBlockers.push(`${jobCount} job(s)`);
+    if (salaryCount > 0) hasBlockers.push(`${salaryCount} salary payment(s)`);
+    if (hasBlockers.length > 0) {
       showAlert(
-        `Cannot delete "${client.clientName}": they have ${jobCount} job(s). Delete or reassign jobs first.`
+        `Cannot delete "${client.clientName}": they have ${hasBlockers.join(' and ')}. Delete those first.`
       );
       return;
     }

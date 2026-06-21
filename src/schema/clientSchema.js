@@ -15,6 +15,8 @@
  * - active: (boolean) If false, client is hidden from "Add job" client dropdown. Default true.
  * - userId: (string) Optional, for audit (who created)
  * - createdAt: (Firestore Timestamp) When created
+ * - monthlySalary: (number) Optional monthly salary amount if client pays monthly
+ * - monthlySalaryCurrency: (string) Currency for monthly salary ('BDT' | 'USD' | 'EUR')
  */
 
 /**
@@ -31,6 +33,8 @@
  * @property {boolean} [active] - If false, hidden from Add job dropdown. Default true.
  * @property {string} [userId]
  * @property {string} [timezone] - The client's timezone
+ * @property {number} [monthlySalary] - Optional monthly salary amount if client pays monthly
+ * @property {string} [monthlySalaryCurrency] - Currency for monthly salary ('BDT' | 'USD' | 'EUR')
  * @property {import('firebase/firestore').Timestamp} [createdAt]
  */
 
@@ -59,5 +63,7 @@ export function createClientData(data) {
     ...(data.imageBase64 != null && data.imageBase64 !== '' && { imageBase64: data.imageBase64 }),
     ...(data.userId != null && data.userId !== '' && { userId: data.userId }),
     ...(data.timezone != null && data.timezone !== '' && { timezone: data.timezone }),
+    ...(data.monthlySalary != null && { monthlySalary: Number(data.monthlySalary) }),
+    ...(data.monthlySalaryCurrency != null && data.monthlySalaryCurrency !== '' && { monthlySalaryCurrency: data.monthlySalaryCurrency }),
   };
 }
