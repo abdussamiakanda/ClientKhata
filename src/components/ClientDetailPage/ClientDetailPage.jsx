@@ -84,8 +84,8 @@ export function ClientDetailPage() {
   const jobIds = useMemo(() => new Set(clientJobs.map((j) => j.id)), [clientJobs]);
 
   const clientPaymentRecords = useMemo(
-    () => paymentRecords.filter((r) => jobIds.has(r.jobId)),
-    [paymentRecords, jobIds]
+    () => paymentRecords.filter((r) => jobIds.has(r.jobId) || (r.isSalaryPayment && r.clientId === clientId)),
+    [paymentRecords, jobIds, clientId]
   );
 
   const totalPaidByJob = useMemo(() => {
@@ -97,10 +97,12 @@ export function ClientDetailPage() {
   }, [clientPaymentRecords]);
 
   const clientStats = useMemo(() => {
-    const totalValue = clientJobs.reduce((sum, j) => sum + (Number(j.amount) || 0), 0);
+    const jobsValue = clientJobs.reduce((sum, j) => sum + (Number(j.amount) || 0), 0);
+    const salaryValue = Number(client?.monthlySalary) || 0;
+    const totalValue = jobsValue + salaryValue;
     const totalPaid = clientPaymentRecords.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
     const outstanding = Math.max(0, totalValue - totalPaid);
-    const currency = clientJobs[0]?.currency ?? 'BDT';
+    const currency = client?.monthlySalaryCurrency || (clientJobs[0]?.currency ?? 'BDT');
     return {
       jobsCount: clientJobs.length,
       totalValue,
@@ -108,7 +110,7 @@ export function ClientDetailPage() {
       outstanding,
       currency,
     };
-  }, [clientJobs, clientPaymentRecords]);
+  }, [clientJobs, clientPaymentRecords, client]);
 
   const closeConfirmModal = () =>
     setConfirmModal((prev) => ({ ...prev, isOpen: false }));
