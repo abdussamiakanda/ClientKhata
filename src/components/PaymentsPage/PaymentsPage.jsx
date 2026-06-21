@@ -98,6 +98,31 @@ export function PaymentsPage() {
     return records.filter((r) => r.isSalaryPayment);
   }, [records]);
 
+  const salaryGroups = useMemo(() => {
+    const groupMap = {};
+    salaryRecords.forEach((r) => {
+      const key = `${r.clientId}_${r.salaryMonth}_${r.salaryYear}`;
+      if (!groupMap[key]) {
+        groupMap[key] = { key, clientId: r.clientId, salaryMonth: r.salaryMonth, salaryYear: r.salaryYear, records: [], totalPaid: 0 };
+      }
+      groupMap[key].records.push(r);
+      groupMap[key].totalPaid += Number(r.amount) || 0;
+    });
+    return Object.values(groupMap).map((g) => {
+      g.records.sort((a, b) => (b.paidAt?.toMillis?.() ?? 0) - (a.paidAt?.toMillis?.() ?? 0));
+      const client = clients.find((c) => c.id === g.clientId);
+      g.clientName = client?.clientName || "—";
+      g.monthlySalary = getMonthlySalaryAmount(client) || 0;
+      g.currency = getMonthlySalaryCurrency(client) || "BDT";
+      g.remaining = Math.max(0, g.monthlySalary - g.totalPaid);
+      return g;
+    }).sort((a, b) => {
+      if (a.salaryYear !== b.salaryYear) return b.salaryYear - a.salaryYear;
+      if (a.salaryMonth !== b.salaryMonth) return b.salaryMonth - a.salaryMonth;
+      return a.clientName.localeCompare(b.clientName);
+    });
+  }, [salaryRecords, clients]);
+
   function getTotalPaid(jobId) {
     return totalByJob[jobId] || 0;
   }
@@ -165,9 +190,23 @@ export function PaymentsPage() {
       setAddError("Client not found.");
       return;
     }
-    const amount = getMonthlySalaryAmount(client);
-    if (!amount) {
+    const monthlySalary = getMonthlySalaryAmount(client);
+    if (!monthlySalary) {
       setAddError("This client has no monthly salary set.");
+      return;
+    }
+    const amount = parseFloat(addForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setAddError("Enter a valid amount.");
+      return;
+    }
+    const key = `${salaryClientId}_${salaryMonth}_${salaryYear}`;
+    const currentTotal = salaryGroups.find((g) => g.key === key)?.totalPaid || 0;
+    const remaining = Math.max(0, monthlySalary - currentTotal);
+    if (amount > remaining) {
+      setAddError(
+        `Remaining for this month is ${formatAmount(remaining, getMonthlySalaryCurrency(client))}. Enter up to that amount.`,
+      );
       return;
     }
     const monthName = new Date(salaryYear, salaryMonth - 1).toLocaleString("en-US", { month: "long" });
@@ -178,10 +217,11 @@ export function PaymentsPage() {
         amount,
         salaryMonth,
         salaryYear,
-        `Salary for ${monthName} ${salaryYear}`,
+        addForm.note.trim() || `Salary for ${monthName} ${salaryYear}`,
         user?.uid,
       );
       setAddForm({ jobId: "", amount: "", note: "" });
+      setSalaryClientId("");
       setAddModalOpen(false);
     } catch (err) {
       setAddError(err.message || "Failed to add payment");
@@ -414,49 +454,75 @@ export function PaymentsPage() {
               )}
 
               {viewTab === "salary" && (
-                salaryRecords.length > 0 ? (
+                salaryGroups.length > 0 ? (
                   <ul className="payments-job-list">
-                    {salaryRecords.map((r) => {
-                      const client = clients.find((c) => c.id === r.clientId);
-                      const monthName = r.salaryMonth
-                        ? new Date(r.salaryYear || 2024, r.salaryMonth - 1).toLocaleString("en-US", { month: "long" })
+                    {salaryGroups.map((group) => {
+                      const monthName = group.salaryMonth
+                        ? new Date(group.salaryYear || 2024, group.salaryMonth - 1).toLocaleString("en-US", { month: "long" })
                         : "";
+                      const isFullyPaid = group.remaining <= 0;
                       return (
-                        <li key={r.id} className="payments-job-card payments-job-card--paid">
+                        <li key={group.key} className={`payments-job-card ${isFullyPaid ? "payments-job-card--paid" : ""}`}>
                           <div className="payments-job-card__head">
                             <div className="payments-job-card__info">
                               <span className="payments-job-card__client">
-                                {client?.clientName || "—"}
+                                {group.clientName}
                               </span>
                               <span className="payments-job-card__desc">
-                                Salary – {monthName} {r.salaryYear || ""}
+                                Salary – {monthName} {group.salaryYear || ""}
                               </span>
                               <span className="payments-job-card__meta">
-                                {formatAmount(r.amount)}
+                                {formatAmount(group.monthlySalary, group.currency)}{" "}
+                                · Paid {formatAmount(group.totalPaid, group.currency)}
+                                {!isFullyPaid && ` · Remaining ${formatAmount(group.remaining, group.currency)}`}
                               </span>
                             </div>
-                          </div>
-                          <ul className="payments-record-list">
-                            <li key={r.id} className="payments-record-item">
-                              <span className="payments-record-amount">
-                                {formatAmount(r.amount)}
-                              </span>
-                              <span className="payments-record-date">
-                                {formatTimestamp(r.paidAt, { short: true })}
-                              </span>
-                              {r.note && (
-                                <span className="payments-record-note">{r.note}</span>
-                              )}
+                            {!isFullyPaid && (
                               <button
                                 type="button"
-                                className="btn btn-icon btn-small btn-danger"
-                                onClick={() => setRemoveRecord({ record: r, job: null })}
-                                disabled={busyId !== null}
-                                aria-label="Remove payment"
+                                className="btn btn-primary btn-small"
+                                onClick={() => {
+                                  setPaymentType("salary");
+                                  setSalaryClientId(group.clientId);
+                                  setSalaryMonth(group.salaryMonth);
+                                  setSalaryYear(group.salaryYear);
+                                  setAddForm((p) => ({
+                                    ...p,
+                                    amount: String(group.remaining),
+                                  }));
+                                  setAddError("");
+                                  setAddModalOpen(true);
+                                }}
+                                disabled={busyId === "add"}
                               >
-                                <Trash2 size={14} />
+                                <Plus size={14} />
+                                Add payment
                               </button>
-                            </li>
+                            )}
+                          </div>
+                          <ul className="payments-record-list">
+                            {group.records.map((r) => (
+                              <li key={r.id} className="payments-record-item">
+                                <span className="payments-record-amount">
+                                  {formatAmount(r.amount, group.currency)}
+                                </span>
+                                <span className="payments-record-date">
+                                  {formatTimestamp(r.paidAt, { short: true })}
+                                </span>
+                                {r.note && (
+                                  <span className="payments-record-note">{r.note}</span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="btn btn-icon btn-small btn-danger"
+                                  onClick={() => setRemoveRecord({ record: r, job: null })}
+                                  disabled={busyId !== null}
+                                  aria-label="Remove payment"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </li>
+                            ))}
                           </ul>
                         </li>
                       );
@@ -605,7 +671,16 @@ export function PaymentsPage() {
                   Client *
                   <select
                     value={salaryClientId}
-                    onChange={(e) => setSalaryClientId(e.target.value)}
+                    onChange={(e) => {
+                      setSalaryClientId(e.target.value);
+                      const client = clients.find((c) => c.id === e.target.value);
+                      if (client) {
+                        const key = `${client.id}_${salaryMonth}_${salaryYear}`;
+                        const existingGroup = salaryGroups.find((g) => g.key === key);
+                        const remaining = existingGroup ? existingGroup.remaining : (getMonthlySalaryAmount(client) || 0);
+                        setAddForm((p) => ({ ...p, amount: String(remaining) }));
+                      }
+                    }}
                     className="form-input"
                     required
                   >
@@ -622,7 +697,16 @@ export function PaymentsPage() {
                   <div className="form-row form-row--gap">
                     <select
                       value={salaryMonth}
-                      onChange={(e) => setSalaryMonth(Number(e.target.value))}
+                      onChange={(e) => {
+                        setSalaryMonth(Number(e.target.value));
+                        if (salaryClientId) {
+                          const key = `${salaryClientId}_${Number(e.target.value)}_${salaryYear}`;
+                          const existingGroup = salaryGroups.find((g) => g.key === key);
+                          const client = clients.find((c) => c.id === salaryClientId);
+                          const remaining = existingGroup ? existingGroup.remaining : (getMonthlySalaryAmount(client) || 0);
+                          setAddForm((p) => ({ ...p, amount: String(remaining) }));
+                        }
+                      }}
                       className="form-input"
                     >
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -633,7 +717,16 @@ export function PaymentsPage() {
                     </select>
                     <select
                       value={salaryYear}
-                      onChange={(e) => setSalaryYear(Number(e.target.value))}
+                      onChange={(e) => {
+                        setSalaryYear(Number(e.target.value));
+                        if (salaryClientId) {
+                          const key = `${salaryClientId}_${salaryMonth}_${Number(e.target.value)}`;
+                          const existingGroup = salaryGroups.find((g) => g.key === key);
+                          const client = clients.find((c) => c.id === salaryClientId);
+                          const remaining = existingGroup ? existingGroup.remaining : (getMonthlySalaryAmount(client) || 0);
+                          setAddForm((p) => ({ ...p, amount: String(remaining) }));
+                        }
+                      }}
                       className="form-input"
                     >
                       {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
@@ -646,12 +739,40 @@ export function PaymentsPage() {
                   const client = clients.find((c) => c.id === salaryClientId);
                   const amt = getMonthlySalaryAmount(client);
                   const curr = getMonthlySalaryCurrency(client);
+                  const key = `${salaryClientId}_${salaryMonth}_${salaryYear}`;
+                  const existingGroup = salaryGroups.find((g) => g.key === key);
+                  const paidSoFar = existingGroup?.totalPaid || 0;
                   return amt ? (
                     <div className="form-hint" style={{ marginBottom: "1rem" }}>
-                      Salary amount: <strong>{formatAmount(amt, curr)}</strong>
+                      Monthly salary: <strong>{formatAmount(amt, curr)}</strong>
+                      {paidSoFar > 0 && (
+                        <> · Paid so far: <strong>{formatAmount(paidSoFar, curr)}</strong></>
+                      )}
+                      {paidSoFar < amt && (
+                        <> · Remaining: <strong>{formatAmount(amt - paidSoFar, curr)}</strong></>
+                      )}
                     </div>
                   ) : null;
                 })()}
+                <label className="form-label">
+                  Amount *
+                  {salaryClientId && (() => {
+                    const client = clients.find((c) => c.id === salaryClientId);
+                    return <span className="form-hint">In {getMonthlySalaryCurrency(client) || "BDT"}</span>;
+                  })()}
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={addForm.amount}
+                    onChange={(e) =>
+                      setAddForm((p) => ({ ...p, amount: e.target.value }))
+                    }
+                    className="form-input"
+                    placeholder="0"
+                    required
+                  />
+                </label>
                 <label className="form-label">
                   Note
                   <input

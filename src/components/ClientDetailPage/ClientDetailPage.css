@@ -375,6 +375,12 @@
   gap: 0.5rem;
 }
 
+.client-detail-job__actions .btn-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Status badges */
 .client-detail-job .status-badge {
   display: inline-block;

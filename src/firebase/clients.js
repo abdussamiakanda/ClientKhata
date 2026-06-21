@@ -95,13 +95,17 @@ export async function addClient(createdBy, data) {
 export async function updateClient(clientId, data) {
   const ref = doc(db, CLIENTS_COLLECTION, clientId);
   const payload = {};
-  const keys = ['clientName', 'institution', 'contactNumber', 'email', 'website', 'address', 'notes', 'imageBase64', 'active', 'timezone'];
+  const keys = ['clientName', 'institution', 'contactNumber', 'email', 'website', 'address', 'notes', 'imageBase64', 'active', 'timezone', 'monthlySalary', 'monthlySalaryCurrency'];
   keys.forEach((k) => {
     if (data[k] === undefined) return;
     if (k === 'imageBase64') {
       payload[k] = data[k] != null && data[k] !== '' ? data[k] : '';
     } else if (k === 'active') {
       payload[k] = Boolean(data[k]);
+    } else if (k === 'monthlySalary') {
+      payload[k] = data[k] != null ? Number(data[k]) : null;
+    } else if (k === 'monthlySalaryCurrency') {
+      payload[k] = data[k] || 'BDT';
     } else {
       payload[k] = data[k] != null ? String(data[k]).trim() : '';
     }

@@ -335,7 +335,13 @@ export function ClientDetailPage() {
                     <li key={job.id} className="client-detail-job">
                       <div className="client-detail-job__main">
                         <span className="client-detail-job__desc">{job.workDescription || '—'}</span>
-                        <span className="client-detail-job__amount">{formatAmount(job.amount, job.currency ?? 'BDT')}</span>
+                        <span className="client-detail-job__amount">
+                          {job.isMonthlySalary ? (
+                            <span className="table-monthly-salary-badge">Salary</span>
+                          ) : (
+                            formatAmount(job.amount, job.currency ?? 'BDT')
+                          )}
+                        </span>
                       </div>
                       <div className="client-detail-job__meta">
                         <span className={`status-badge ${getStatusBadgeClass(job.status)}`}>{job.status}</span>
@@ -356,15 +362,24 @@ export function ClientDetailPage() {
                           <Eye size={14} />
                           View
                         </Link>
-                        <Link
-                          to={`/invoice/${job.id}`}
-                          className="btn btn-small btn-secondary"
-                          aria-label="View invoice"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <FileText size={14} />
-                        </Link>
+                        {job.isMonthlySalary ? (
+                          <span
+                            className="btn btn-small btn-secondary btn-disabled"
+                            aria-label="Invoice disabled"
+                          >
+                            <FileText size={14} />
+                          </span>
+                        ) : (
+                          <Link
+                            to={`/invoice/${job.id}`}
+                            className="btn btn-small btn-secondary"
+                            aria-label="View invoice"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <FileText size={14} />
+                          </Link>
+                        )}
                         <button type="button" className="btn btn-small btn-secondary" onClick={() => handleEditJob(job)} aria-label="Edit job">
                           <Pencil size={14} />
                         </button>

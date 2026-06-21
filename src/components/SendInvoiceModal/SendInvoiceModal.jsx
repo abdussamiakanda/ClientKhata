@@ -33,7 +33,7 @@ export function SendInvoiceModal({
   }, []);
 
   const jobs = useMemo(
-    () => (initialJobs || []).filter((j) => j.status !== "Paid"),
+    () => (initialJobs || []).filter((j) => j.status !== "Paid" && !j.isMonthlySalary),
     [initialJobs],
   );
 
